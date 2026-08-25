@@ -2,20 +2,25 @@
   "name": "player-one-app",
   "version": "0.0.0",
   "private": true,
-  "description": "Player One collector app (React Native). UI scaffold: the server and the device are mocked, there is no native project, and it does not launch on a phone yet — see README.md.",
+  "main": "index.js",
+  "description": "Player One collector app (React Native on Expo). UI scaffold: the server and the device are mocked. Runs on a phone through Expo Go; a native build still needs prebuild — see README.md.",
   "type": "module",
   "scripts": {
+    "start": "expo start",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.66.0",
-    "react": "^19.1.0",
-    "react-native": "^0.82.0"
+    "expo": "^57.0.16",
+    "expo-build-properties": "~57.0.14",
+    "react": "19.2.3",
+    "react-native": "0.86.2",
+    "react-native-safe-area-context": "~5.7.0"
   },
   "devDependencies": {
     "@types/react": "^19.0.8",
-    "typescript": "^5.6.0",
+    "typescript": "~6.0.3",
     "vitest": "^2.1.0"
   }
 }

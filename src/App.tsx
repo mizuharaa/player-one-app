@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { MockCollectorApi } from './api/mock.ts';
 import { ApiProvider } from './api/context.tsx';
 import { LocaleProvider } from './locale.tsx';
@@ -69,16 +70,18 @@ const api = new MockCollectorApi();
 
 export function App() {
   return (
-    <ThemeProvider>
-      <LocaleProvider>
-        <ApiProvider value={api}>
-          <QueryClientProvider client={queryClient}>
-            <NavProvider initial={{ name: 'register' }}>
-              <Current />
-            </NavProvider>
-          </QueryClientProvider>
-        </ApiProvider>
-      </LocaleProvider>
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <LocaleProvider>
+          <ApiProvider value={api}>
+            <QueryClientProvider client={queryClient}>
+              <NavProvider initial={{ name: 'register' }}>
+                <Current />
+              </NavProvider>
+            </QueryClientProvider>
+          </ApiProvider>
+        </LocaleProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }

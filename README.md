@@ -1,7 +1,7 @@
 # player-one-app
 
 The **collector-facing mobile app** for Player One — VNG PT Lab's ego-camera
-data-collection platform. React Native 0.82, Vietnamese-first.
+data-collection platform. React Native 0.86 on Expo SDK 57, Vietnamese-first.
 
 ## What lives here vs. [player-one](https://github.com/mizuharaa/player-one)
 
@@ -30,11 +30,55 @@ test device exist. The design tokens are vendored copies, not a dependency —
 
 ---
 
+## Run it on your phone
+
+Expo Go. No Android Studio, no cable, no build. Put the phone and the laptop on
+the **same Wi-Fi**, install Expo Go from the Play Store or the App Store, then:
+
+```sh
+git clone https://github.com/mizuharaa/player-one-app
+cd player-one-app
+npm install
+npx expo start
+```
+
+Scan the QR code the terminal prints — with Expo Go's own scanner on Android,
+with the Camera app on iOS. The app opens on the registration screen and every
+screen is reachable from there, running against the in-memory mock. `r` in the
+terminal reloads the phone, `j` opens the debugger, `Ctrl-C` stops the server.
+
+Nothing here needs a native module that Expo Go does not already carry: the
+device is mocked, so BLE and file transfer are not involved, and the only
+third-party runtime dependency is `react-native-safe-area-context`, which Expo
+Go bundles.
+
+If the phone will not connect — guest Wi-Fi with client isolation, a VPN on
+either end, or a Windows firewall prompt that got dismissed — `npx expo start
+--tunnel` relays through Expo's servers instead. Slower, and both ends must be
+online.
+
+### The version delta, on purpose
+
+PRODUCT.md in the platform repo says **React Native 0.82**. This repo pins
+**React Native 0.86.2, React 19.2.3, Expo SDK 57**.
+
+The reason is Expo Go itself: the copy on the store is a native binary compiled
+against exactly one SDK, and it loads only the React Native that SDK ships with.
+Pinning 0.82 would mean no preview at all. `npx expo install --check` is the
+check that the three versions above are that pair.
+
+This costs nothing later. `expo prebuild` reads the versions out of
+`package.json` at the moment it runs, so the native build can move to whatever
+PRODUCT.md settles on then; the delta lives in one file and is visible in one
+command.
+
+---
+
 ## The app itself
 
 The Android app collectors use: register, accept the six agreements, train,
 pass the exam, claim a task, bind and provision an Ego camera, declare a
-session, confirm an upload, watch the income line. React Native 0.82,
+session, confirm an upload, watch the income line. React Native 0.86,
 TypeScript strict, Vietnamese first (LOC-01 is P0; English rides along at P2).
 
 > Paths in code comments that start `packages/`, `docs/`, or name `PRODUCT.md`
@@ -44,7 +88,8 @@ TypeScript strict, Vietnamese first (LOC-01 is P0; English rides along at P2).
 
 ### What this is, exactly
 
-**A UI scaffold with two mocked seams. It does not launch on a phone yet.**
+**A UI scaffold with two mocked seams. It runs on a phone through Expo Go;
+it is not yet a native build.**
 
 Read that literally before quoting progress from it:
 
@@ -54,12 +99,14 @@ Read that literally before quoting progress from it:
 | Server | `MockCollectorApi` — in memory, one process. There is no HTTP client and no auth. |
 | Device | `MockDeviceTransport` / `MockDeviceTransfer` — no BLE, no Wi-Fi, no file transfer. See `DEVICE_DEPS.md`. |
 | Persistence | **None.** Killing the app resets registration, claims, the upload queue and income. The offline/restart-survival requirement is not met. |
-| Native project | **None.** No `android/`, no Metro or Babel config, no Expo dependency. `expo prebuild` has never been run here. |
-| Launchable | **No.** `npm start` / `expo run:android` do not exist as scripts because they would not work. |
+| Native project | **None checked in.** `android/` is `expo prebuild` output and is gitignored; prebuild has never been run here. Metro and Babel use Expo's defaults, so there is no config file for either. |
+| Launchable | **In Expo Go, yes** — `npm install && npx expo start`, scan the QR. See "Run it on your phone" above. **As an installable APK, not yet:** that needs `expo prebuild` plus the EgoLowBle TurboModule (`DEVICE_DEPS.md`). |
 
-What *is* runnable today is the typechecker and the unit tests. Those cover the
-mock's gates (APP-02, APP-05, APP-10, APP-15, APP-25), the BLE call order, the
-message catalogue, and the agreement-id contract with the server.
+The typechecker and the unit tests also run here. Those cover the mock's gates
+(APP-02, APP-05, APP-10, APP-15, APP-25), the BLE call order, the message
+catalogue, and the agreement-id contract with the server. Vitest never loads
+React Native or Expo — the tests import `src/api/` and `src/device/` only, which
+is why they stay fast and need no native runtime.
 
 ```sh
 npm install
@@ -69,10 +116,12 @@ npm test
 
 ### The Android floor
 
-**minSdkVersion 28 — Android 9+.** PRODUCT.md fixes it; nothing in this
-directory can enforce it yet because there is no `android/` to put it in.
-When `expo prebuild` generates one, 28 is the number, and the generated
-`build.gradle` is the first place it becomes real rather than stated.
+**minSdkVersion 28 — Android 9+.** PRODUCT.md fixes it, and `app.json` now
+records it where prebuild will read it: the `expo-build-properties` plugin
+writes `minSdkVersion: 28` into the generated `build.gradle`. That is still a
+declaration, not a proof — it becomes real the first time prebuild runs and the
+gradle file is read back. Expo Go ignores it (its own floor is whatever the
+store build has), so nothing about the preview verifies the number.
 
 ### Rules this app must not break
 
@@ -112,11 +161,10 @@ test/          the mock's gates, the device seams, the catalogue, the contract
 Every one of these is marked `ponytail:` at the place it bites:
 
 - No persistence, no restart recovery, no background upload worker (`src/App.tsx`).
-- Hand-rolled navigation stack; `@react-navigation` needs `react-native-screens`,
-  a native module (`src/nav.tsx`).
-- Top inset from `StatusBar.currentHeight` only — no cutout, gesture-bar or
-  landscape insets until `react-native-safe-area-context` can be built
-  (`src/ui.tsx`). Edge-to-edge on a current Android target is unverified.
+- Hand-rolled navigation stack (`src/nav.tsx`). `@react-navigation` needs
+  `react-native-screens`, which Expo Go does bundle, so the swap is no longer
+  blocked — it is simply not done. The `Route` union and the
+  `Record<RouteName, ComponentType>` registry survive it unchanged.
 - QR device binding is a fixed serial; VisionCamera needs a native build
   (`src/screens/Devices.tsx`).
 - Training and exam content is a shell. PaXini owes it.
@@ -136,9 +184,14 @@ Every one of these is marked `ponytail:` at the place it bites:
   in this app without forking, so it was: it now measures 7.19:1.
 - One-column phone layout only. No tablet or foldable adaptation — none is
   specified, and the pilot is phones.
-- Safe area is the top inset only. Bottom, side, cutout and IME insets, and
-  predictive back, need `react-native-safe-area-context` and platform
-  navigation — both native modules (`src/ui.tsx`, `src/nav.tsx`).
+- Insets now come from `react-native-safe-area-context`, so the status bar,
+  the gesture bar, the cutout and the landscape sides are all cleared
+  (`src/ui.tsx`). Still unhandled: the keyboard inset, and predictive back,
+  which wants platform navigation (`src/nav.tsx`).
+- Expo Go is a preview, not the product. It cannot host the EgoLowBle
+  TurboModule, a foreground upload service, or anything else in
+  `DEVICE_DEPS.md`; those appear only in a prebuilt native app. What the phone
+  shows is the UI and the mock, at real size, with real touch.
 - The six agreement identifiers are pinned by a literal on each side of a
   repository boundary. A rename in this app fails a test here; a rename in the
   platform's `collector_agreements_name_check` cannot be seen from this repo at

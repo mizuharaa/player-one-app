@@ -1,4 +1,21 @@
 {
-  "name": "PlayerOneCollector",
-  "displayName": "Player One"
+  "expo": {
+    "name": "player-one-app",
+    "slug": "player-one-app",
+    "version": "0.0.0",
+    "userInterfaceStyle": "automatic",
+    "android": {
+      "package": "vn.vng.playerone.collector"
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 28
+          }
+        }
+      ]
+    ]
+  }
 }

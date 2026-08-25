@@ -4,9 +4,10 @@ import { BackHandler } from 'react-native';
 /**
  * A typed stack navigator in ~60 lines.
  *
- * ponytail: hand-rolled stack, swap for @react-navigation when the app builds
- * on a device — its native-stack needs react-native-screens, a native module
- * this machine cannot compile or verify. The `Route` union and the
+ * ponytail: hand-rolled stack, swap for @react-navigation when a screen needs
+ * something this does not do — deep links, a tab bar, predictive back. Its
+ * native-stack needs react-native-screens, which Expo Go bundles, so the swap
+ * is no longer blocked on a native build. The `Route` union and the
  * `Record<RouteName, …>` registry in App.tsx survive that swap unchanged, and
  * the registry is the completeness check: a screen missing from it is a type
  * error, not a dead link found at runtime.

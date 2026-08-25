@@ -62,7 +62,9 @@ only implementations, and the app builds and tests device-free.
 
 ## When prebuild happens
 
-No `android/` directory exists yet, so nothing here declares a minSdk. When
-`expo prebuild` (PRODUCT.md's stated path) generates it, **minSdkVersion is
-28** — Android 9+ per PRODUCT.md — and the EgoLowBle TurboModule slots in
-behind `DeviceTransport` with the JNI pieces above.
+No `android/` directory exists yet. `app.json` declares the floor instead: the
+`expo-build-properties` plugin sets **minSdkVersion 28** — Android 9+ per
+PRODUCT.md — and prebuild writes it into the generated `build.gradle`. The
+EgoLowBle TurboModule slots in behind `DeviceTransport` with the JNI pieces
+above at the same moment. Expo Go runs the app without any of this, and without
+any of the device seams above being real.

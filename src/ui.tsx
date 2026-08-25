@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { FlatList, Platform, Pressable, ScrollView, StatusBar, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNav } from './nav.tsx';
 import { useT } from './locale.tsx';
 import { useTheme } from './theme.tsx';
@@ -11,23 +12,29 @@ import { useTheme } from './theme.tsx';
  */
 
 /**
- * The status-bar inset. `react-native-safe-area-context` is the real answer —
- * it also covers cutouts, the gesture bar and landscape side insets — but it
- * is a native module and nothing here can build one yet (DEVICE_DEPS.md).
- * `StatusBar.currentHeight` is RN core, is the actual measured inset on
- * Android, and is at least not a guess.
+ * Padding for a screen's scrolling content that clears the system bars.
  *
- * ponytail: known ceiling — top inset only, Android only. Replace the whole
- * function with `useSafeAreaInsets()` at the first build that has native
- * modules, and verify edge-to-edge on a current Android target then.
+ * Android has been edge-to-edge since target SDK 35 — the app draws behind the
+ * status bar and behind the gesture bar — so a plain `padding` puts the last
+ * row of every list under the navigation bar. `useSafeAreaInsets` reports the
+ * real measured insets, including the cutout and the landscape side bars.
+ * `SafeAreaProvider` in App.tsx is what makes it non-zero.
  */
-function topInset(fallback: number): number {
-  if (Platform.OS !== 'android') return fallback;
-  return StatusBar.currentHeight ?? fallback;
+function useContentPadding() {
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
+  return {
+    paddingTop: theme.space[4],
+    paddingBottom: theme.space[4] + insets.bottom,
+    paddingLeft: theme.space[4] + insets.left,
+    paddingRight: theme.space[4] + insets.right,
+    gap: theme.space[3],
+  };
 }
 
 function Header({ title }: { title: string }) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const nav = useNav();
   const tt = useT();
   return (
@@ -36,8 +43,9 @@ function Header({ title }: { title: string }) {
         flexDirection: 'row',
         alignItems: 'center',
         gap: theme.space[3],
-        paddingHorizontal: theme.space[4],
-        paddingTop: topInset(theme.space[6]) + theme.space[3],
+        paddingLeft: theme.space[4] + insets.left,
+        paddingRight: theme.space[4] + insets.right,
+        paddingTop: insets.top + theme.space[3],
         paddingBottom: theme.space[3],
         backgroundColor: theme.color.background,
         borderBottomWidth: 1,
@@ -74,12 +82,11 @@ function Header({ title }: { title: string }) {
 /** A screen whose content is bounded: a form, a hub, one record's detail. */
 export function Screen({ title, children }: { title: string; children: ReactNode }) {
   const theme = useTheme();
+  const content = useContentPadding();
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.surface }}>
       <Header title={title} />
-      <ScrollView contentContainerStyle={{ padding: theme.space[4], gap: theme.space[3] }}>
-        {children}
-      </ScrollView>
+      <ScrollView contentContainerStyle={content}>{children}</ScrollView>
     </View>
   );
 }
@@ -110,6 +117,7 @@ export function ListScreen<T>({
   empty?: ReactNode;
 }) {
   const theme = useTheme();
+  const content = useContentPadding();
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.surface }}>
       <Header title={title} />
@@ -120,7 +128,7 @@ export function ListScreen<T>({
         ListHeaderComponent={header === undefined ? null : <>{header}</>}
         ListFooterComponent={footer === undefined ? null : <>{footer}</>}
         ListEmptyComponent={empty === undefined ? null : <>{empty}</>}
-        contentContainerStyle={{ padding: theme.space[4], gap: theme.space[3] }}
+        contentContainerStyle={content}
       />
     </View>
   );
