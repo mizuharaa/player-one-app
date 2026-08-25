@@ -1,0 +1,6 @@
+node_modules/
+# expo prebuild output — generated, never hand-edited, never committed
+android/
+ios/
+.expo/
+*.log
