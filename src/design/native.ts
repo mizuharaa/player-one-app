@@ -2,7 +2,7 @@
  * VENDORED, DO NOT EDIT HERE.
  *
  * `native.ts` and `tokens.ts` in this directory are copies of `packages/design/src/`
- * in mizuharaa/player-one, taken at commit fd6b98e. Nothing below this banner
+ * in mizuharaa/player-one, taken at commit bcd3126. Nothing below this banner
  * was changed, so the only diff against the original is the banner itself.
  * That package is a pnpm workspace dependency there and cannot be resolved
  * from this repository; publishing it to a registry for two files is more
