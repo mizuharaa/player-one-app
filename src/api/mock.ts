@@ -1,5 +1,6 @@
 import type {
   AgreementId,
+  BankCode,
   BoundDevice,
   Claim,
   CollectionSession,
@@ -7,6 +8,9 @@ import type {
   CollectorProfile,
   EpisodeUpload,
   IncomeEntry,
+  IncomePeriod,
+  PayoutAccount,
+  PayoutAccountInput,
   SessionInput,
   Task,
 } from './types.ts';
@@ -35,6 +39,66 @@ export class ApiError extends Error {
 let seq = 0;
 const id = (prefix: string): string => `${prefix}-${(++seq).toString().padStart(4, '0')}`;
 
+/**
+ * The mock's ZaloPay: what Verify Account would answer for a given phone,
+ * account or card. Every `verify_status` the contract allows is reachable
+ * from here, so a screen can be developed against each outcome without a
+ * disbursement contract, credentials, or a network.
+ *
+ * Phones not listed have no wallet (ZaloPay -101) unless they are the
+ * registered collector's own phone, which is seeded as a wallet in their
+ * registered name — the default happy path for whoever registers.
+ */
+type WalletState = 'ok' | 'locked' | 'kyc_limit' | 'unverified';
+const ZALOPAY_WALLETS: Record<string, { name: string; state: WalletState }> = {
+  '0903000009': { name: 'Nguyễn Văn B', state: 'ok' },
+  '0903001011': { name: 'Phạm Văn L', state: 'locked' },
+  '0903000406': { name: 'Hoàng Thị K', state: 'kyc_limit' },
+  '0903001103': { name: 'Đỗ Văn U', state: 'unverified' },
+};
+const ZALOPAY_BANK_ACCOUNTS: Record<string, string> = {
+  '0071000123456': 'Nguyễn Văn A',
+  '19036789012345': 'Trần Thị B',
+};
+const ZALOPAY_BANK_CARDS: Record<string, string> = {
+  '9704366612345678': 'Nguyễn Văn A',
+};
+/** The server's cached `get-bank-code` list. The app never carries one of its own. */
+const BANK_CODES: BankCode[] = [
+  { code: 'VCB', name: 'Vietcombank' },
+  { code: 'TCB', name: 'Techcombank' },
+  { code: 'ACB', name: 'ACB' },
+  { code: 'MB', name: 'MB Bank' },
+  { code: 'VPB', name: 'VPBank' },
+];
+/** The URLs ZaloPay returns with -101 and -406. Real ones come from the response; these only need to be openable. */
+const ONBOARDING_URL = 'https://zalopay.mock/onboarding';
+const REFORM_URL = 'https://zalopay.mock/reform';
+
+/**
+ * The server's name rule, mirrored (payout brief, Agent B item 5): strip
+ * diacritics, case-fold, collapse whitespace, compare token SETS — Vietnamese
+ * name order varies by form. Exact set match verifies; anything else is a
+ * mismatch that keeps BOTH names. This lives in the mock because it is the
+ * server's decision; no screen or service in the app compares names.
+ */
+const nameTokens = (name: string): Set<string> =>
+  new Set(
+    name
+      .normalize('NFD')
+      .replace(/\p{M}/gu, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D')
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((token) => token !== ''),
+  );
+const sameName = (a: string, b: string): boolean => {
+  const ta = nameTokens(a);
+  const tb = nameTokens(b);
+  return ta.size === tb.size && [...ta].every((token) => tb.has(token));
+};
+
 export class MockCollectorApi implements CollectorApi {
   private me: CollectorProfile | null = null;
   private claims: Claim[] = [];
@@ -43,6 +107,18 @@ export class MockCollectorApi implements CollectorApi {
   private episodeRows: EpisodeUpload[];
   private taskRows: Task[];
   private incomeRows: IncomeEntry[];
+  /** Append-only, like the table: the last row is the current account. */
+  private payoutAccountRows: PayoutAccount[] = [];
+  private incomePeriodRows: IncomePeriod[];
+  /**
+   * The transport's view of the network. `offline` makes every payout call
+   * fail the way a dead radio does, so the "connect to submit" path and the
+   * cached income path can be exercised — and so a test can prove nothing is
+   * queued or retried while it is off.
+   */
+  private network: 'online' | 'offline' = 'online';
+  /** How many times a declaration reached the transport, online or not. */
+  private declareAttemptCount = 0;
 
   constructor() {
     this.taskRows = [
@@ -118,6 +194,55 @@ export class MockCollectorApi implements CollectorApi {
       { episodeId: 'ego1-20260819-0640', effectiveMinutes: '0', amountVnd: '0', kind: 'confirmed', settlementState: null },
       // Estimated: uploaded but not yet decided. Server's estimate, not ours.
       { episodeId: 'ego1-20260820-1830', effectiveMinutes: '52', amountVnd: '62400', kind: 'estimated', settlementState: null },
+    ];
+    // One row per settlement period, every figure a server string. The cycle
+    // length is the brief's [ASSUMED] 7 days; the app renders whatever dates
+    // arrive. `withheldVnd` is '0' on every row because the PIT rate is an
+    // open finance decision (brief §0.7 item 4), not because it is free — the
+    // column is shown so the day it stops being 0 is visible, not surprising.
+    // The `on_hold` period carries no reason field at all: the type has none,
+    // so the screen cannot show one.
+    this.incomePeriodRows = [
+      {
+        periodStart: '2026-08-18',
+        periodEnd: '2026-08-24',
+        validMinutes: '318.5',
+        grossVnd: '382200',
+        withheldVnd: '0',
+        netVnd: '382200',
+        status: 'pending_review',
+        paidAt: null,
+      },
+      {
+        periodStart: '2026-08-11',
+        periodEnd: '2026-08-17',
+        validMinutes: '402',
+        grossVnd: '482400',
+        withheldVnd: '0',
+        netVnd: '482400',
+        status: 'approved',
+        paidAt: null,
+      },
+      {
+        periodStart: '2026-08-04',
+        periodEnd: '2026-08-10',
+        validMinutes: '96',
+        grossVnd: '115200',
+        withheldVnd: '0',
+        netVnd: '115200',
+        status: 'on_hold',
+        paidAt: null,
+      },
+      {
+        periodStart: '2026-07-28',
+        periodEnd: '2026-08-03',
+        validMinutes: '455',
+        grossVnd: '546000',
+        withheldVnd: '0',
+        netVnd: '546000',
+        status: 'paid',
+        paidAt: '2026-08-06T09:12:00+07:00',
+      },
     ];
   }
 
@@ -280,5 +405,107 @@ export class MockCollectorApi implements CollectorApi {
 
   async income(): Promise<IncomeEntry[]> {
     return this.incomeRows.map((i) => ({ ...i }));
+  }
+
+  // ---- payout ------------------------------------------------------------
+
+  /** Test and demo knob. There is no NetInfo in this scaffold; this is the network. */
+  setNetwork(state: 'online' | 'offline'): void {
+    this.network = state;
+  }
+
+  get declareAttempts(): number {
+    return this.declareAttemptCount;
+  }
+
+  private mustBeOnline(): void {
+    if (this.network === 'offline') throw new ApiError('offline');
+  }
+
+  async payoutBankCodes(): Promise<BankCode[]> {
+    this.mustBeOnline();
+    return BANK_CODES.map((b) => ({ ...b }));
+  }
+
+  async payoutAccount(): Promise<PayoutAccount | null> {
+    this.mustBeOnline();
+    const current = this.payoutAccountRows[this.payoutAccountRows.length - 1];
+    return current === undefined ? null : { ...current };
+  }
+
+  /**
+   * Verification-on-declare, as the server does it (payout brief, Agent B
+   * item 5). The full account or card number is read once, to look the
+   * account up and to take its last four digits, and is then dropped: the
+   * stored row has `accountNoLast4` and nothing else of it, exactly like the
+   * table (the real server keeps the full value in its secrets store, which
+   * this mock does not model because the app must never see it again).
+   */
+  async declarePayoutAccount(input: PayoutAccountInput): Promise<PayoutAccount> {
+    this.declareAttemptCount += 1;
+    this.mustBeOnline();
+    const me = this.mustProfile();
+    const declaredName = input.declaredName.trim();
+    if (declaredName === '') throw new ApiError('missing_fields');
+
+    const base = {
+      id: id('pa'),
+      method: input.method,
+      phone: null as string | null,
+      bankCode: null as string | null,
+      accountNoLast4: null as string | null,
+      declaredName,
+      verifiedName: null as string | null,
+      verifiedAt: null as string | null,
+      onboardingUrl: null as string | null,
+      reformUrl: null as string | null,
+    };
+    const now = new Date().toISOString();
+    const nameOutcome = (zaloPayName: string): PayoutAccount =>
+      sameName(declaredName, zaloPayName)
+        ? { ...base, verifiedName: zaloPayName, verifyStatus: 'verified', verifiedAt: now }
+        : // The discrepancy is the signal: the declared name stays as typed.
+          { ...base, verifiedName: zaloPayName, verifyStatus: 'name_mismatch', verifiedAt: now };
+
+    let row: PayoutAccount;
+    if (input.method === 'WALLET') {
+      const phone = input.phone.trim();
+      if (phone === '') throw new ApiError('missing_fields');
+      base.phone = phone;
+      const wallet =
+        ZALOPAY_WALLETS[phone] ?? (phone === me.phone ? { name: me.name, state: 'ok' as const } : undefined);
+      if (wallet === undefined) {
+        // -101 USER_NOT_EXISTS: not a dead end — ZaloPay hands back the page to create one.
+        row = { ...base, verifyStatus: 'no_wallet', verifiedAt: now, onboardingUrl: ONBOARDING_URL };
+      } else if (wallet.state === 'locked') {
+        row = { ...base, verifyStatus: 'locked', verifiedAt: now };
+      } else if (wallet.state === 'kyc_limit') {
+        row = { ...base, verifyStatus: 'kyc_limit', verifiedAt: now, reformUrl: REFORM_URL };
+      } else if (wallet.state === 'unverified') {
+        row = { ...base, verifyStatus: 'unverified', verifiedAt: now };
+      } else {
+        row = nameOutcome(wallet.name);
+      }
+    } else {
+      const number = (input.method === 'BANK_ACCOUNT' ? input.accountNo : input.cardNo).trim();
+      if (input.bankCode.trim() === '' || number === '') throw new ApiError('missing_fields');
+      base.bankCode = input.bankCode;
+      base.accountNoLast4 = number.slice(-4);
+      const directory = input.method === 'BANK_ACCOUNT' ? ZALOPAY_BANK_ACCOUNTS : ZALOPAY_BANK_CARDS;
+      const holder = directory[number];
+      // -105 INVALID_BANK_CODE / -106 INVALID_BANK_INFO: nothing to compare against.
+      row =
+        !BANK_CODES.some((b) => b.code === input.bankCode) || holder === undefined
+          ? { ...base, verifyStatus: 'error', verifiedAt: now }
+          : nameOutcome(holder);
+    }
+    this.payoutAccountRows.push(row);
+    return { ...row };
+  }
+
+  async payoutIncome(): Promise<IncomePeriod[]> {
+    this.mustBeOnline();
+    this.mustProfile();
+    return this.incomePeriodRows.map((p) => ({ ...p }));
   }
 }
