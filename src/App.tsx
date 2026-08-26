@@ -18,6 +18,10 @@ import { TaskDetail } from './screens/TaskDetail.tsx';
 import { TaskHall } from './screens/TaskHall.tsx';
 import { Training } from './screens/Training.tsx';
 import { Uploads } from './screens/Uploads.tsx';
+import { Payout } from './screens/payout/Payout.tsx';
+import { PayoutDeclare } from './screens/payout/PayoutDeclare.tsx';
+import { PayoutIncome } from './screens/payout/PayoutIncome.tsx';
+import { PayoutResult } from './screens/payout/PayoutResult.tsx';
 
 /**
  * Every route has a screen, checked by the compiler: a route added to `Route`
@@ -38,6 +42,10 @@ const SCREENS: Record<RouteName, ComponentType> = {
   sessionCreate: SessionCreate,
   uploads: Uploads,
   income: Income,
+  payout: Payout,
+  payoutDeclare: PayoutDeclare,
+  payoutResult: PayoutResult,
+  payoutIncome: PayoutIncome,
 };
 
 function Current() {

@@ -25,6 +25,7 @@ export function Home() {
     { key: 'home.session', route: { name: 'sessionCreate' } },
     { key: 'home.uploads', route: { name: 'uploads' } },
     { key: 'home.income', route: { name: 'income' } },
+    { key: 'home.payout', route: { name: 'payout' } },
     { key: 'home.training', route: { name: 'training' } },
   ];
 

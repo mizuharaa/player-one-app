@@ -176,6 +176,101 @@ const vi = {
   'settlement.bill_generated': 'Đã lập bảng kê',
   'settlement.manually_paid': 'Đã trả thủ công',
   'settlement.exception': 'Có vấn đề, đang xử lý',
+
+  'home.payout': 'Tài khoản nhận tiền',
+
+  'payout.title': 'Nhận tiền',
+  'payout.intro':
+    'Thu nhập được chi trả qua ZaloPay: vào ví ZaloPay, tài khoản ngân hàng hoặc thẻ ATM. Khai báo một lần; máy chủ xác minh với ZaloPay và cho bạn biết kết quả.',
+  'payout.none': 'Chưa khai báo tài khoản nhận tiền.',
+  'payout.declare': 'Khai báo tài khoản nhận tiền',
+  'payout.change': 'Đổi tài khoản nhận tiền',
+  'payout.viewResult': 'Xem kết quả xác minh',
+  'payout.income': 'Bảng kê thu nhập theo kỳ',
+  'payout.current': 'Tài khoản hiện tại',
+  'payout.method': 'Hình thức',
+  'payout.method.WALLET': 'Ví ZaloPay',
+  'payout.method.BANK_ACCOUNT': 'Tài khoản ngân hàng',
+  'payout.method.BANK_CARD': 'Thẻ ATM',
+  'payout.phone': 'Số điện thoại ví ZaloPay',
+  'payout.bank': 'Ngân hàng',
+  'payout.accountNo': 'Số tài khoản',
+  'payout.cardNo': 'Số thẻ',
+  'payout.holderName': 'Tên chủ tài khoản (như trên giấy tờ)',
+  'payout.last4': 'Số cuối',
+  'payout.declaredName': 'Tên bạn khai',
+  'payout.verifiedName': 'Tên ZaloPay ghi nhận',
+  'payout.verifiedAt': 'Xác minh lúc',
+  'payout.noStore':
+    'Số tài khoản chỉ được gửi lên máy chủ để xác minh, không lưu trên điện thoại. Sau đó ứng dụng chỉ hiển thị 4 số cuối.',
+  'payout.submit': 'Gửi xác minh',
+  'payout.submitting': 'Đang gửi…',
+  'payout.offline':
+    'Không có kết nối. Khai báo chưa được gửi và sẽ không tự gửi lại — kết nối mạng rồi bấm gửi lần nữa.',
+  'payout.refused': 'Máy chủ không nhận khai báo này. Kiểm tra lại thông tin rồi gửi lại.',
+  'payout.invalid.name': 'Nhập tên chủ tài khoản.',
+  'payout.invalid.phone':
+    'Số di động Việt Nam gồm 10 chữ số, bắt đầu bằng 0 (ví dụ 090…). Máy chủ sẽ kiểm tra lại.',
+  'payout.invalid.bank': 'Chọn ngân hàng.',
+  'payout.invalid.number': 'Nhập số tài khoản hoặc số thẻ, chỉ gồm chữ số.',
+  'payout.banksLoading': 'Đang tải danh sách ngân hàng…',
+  'payout.banksFailed': 'Không tải được danh sách ngân hàng.',
+
+  'payout.result.title': 'Kết quả xác minh',
+  'payout.result.none': 'Chưa có tài khoản nào để xác minh.',
+  'payout.result.verifiedTitle': 'ZaloPay xác nhận tài khoản này thuộc về',
+  'payout.result.verifiedBody': 'Thu nhập của bạn sẽ được chi trả vào tài khoản này.',
+  'payout.result.mismatchTitle': 'Hai tên chưa khớp',
+  'payout.result.mismatchBody':
+    'Tên bạn khai và tên ZaloPay ghi nhận cho tài khoản này khác nhau. Để tránh trả nhầm người, tiền chưa được chi cho đến khi hai tên khớp. Bạn có thể sửa tên đã khai, hoặc khai báo tài khoản đứng tên bạn.',
+  'payout.result.fixName': 'Sửa tên đã khai',
+  'payout.result.noWalletTitle': 'Số này chưa có ví ZaloPay',
+  'payout.result.noWalletBody':
+    'Tạo ví ZaloPay bằng đúng số điện thoại này trên trang của ZaloPay, rồi quay lại khai báo lần nữa.',
+  'payout.result.openOnboarding': 'Mở ZaloPay để tạo ví',
+  'payout.result.kycTitle': 'Ví đã chạm hạn mức nhận tiền',
+  'payout.result.kycBody':
+    'ZaloPay giới hạn số tiền một ví có thể nhận cho đến khi nâng cấp xác thực. Nâng cấp trên trang của ZaloPay, rồi khai báo lại.',
+  'payout.result.openReform': 'Nâng hạn mức trên ZaloPay',
+  'payout.result.lockedTitle': 'Ví ZaloPay đang bị khóa',
+  'payout.result.lockedBody':
+    'ZaloPay đang khóa ví này nên ví không thể nhận tiền. Thu nhập của bạn vẫn được ghi nhận đầy đủ; tiền sẽ được chi khi ví hoạt động lại, hoặc khi bạn khai báo một tài khoản khác đứng tên bạn. Việc mở khóa do ZaloPay xử lý — liên hệ ZaloPay từ trong ứng dụng ZaloPay.',
+  'payout.result.unverifiedTitle': 'Ví chưa xác thực danh tính',
+  'payout.result.unverifiedBody':
+    'ZaloPay chưa xác thực danh tính (KYC) của ví này. Hoàn tất xác thực trong ứng dụng ZaloPay, rồi khai báo lại.',
+  'payout.result.errorTitle': 'Chưa xác minh được',
+  'payout.result.errorBody':
+    'ZaloPay không nhận ra thông tin này. Kiểm tra lại ngân hàng và số tài khoản hoặc số thẻ, rồi khai báo lại.',
+  'payout.result.redeclare': 'Khai báo lại',
+  'payout.result.other': 'Khai báo tài khoản khác',
+  'payout.result.contact': 'Liên hệ hỗ trợ',
+
+  'payout.verify.unverified': 'Chưa xác thực',
+  'payout.verify.verified': 'Đã xác minh',
+  'payout.verify.name_mismatch': 'Tên chưa khớp',
+  'payout.verify.no_wallet': 'Chưa có ví',
+  'payout.verify.locked': 'Ví bị khóa',
+  'payout.verify.kyc_limit': 'Chạm hạn mức',
+  'payout.verify.error': 'Chưa xác minh được',
+
+  'payout.income.title': 'Bảng kê thu nhập',
+  'payout.income.intro':
+    'Mỗi kỳ là một bảng kê do máy chủ lập. Mọi con số ở đây là của máy chủ; ứng dụng không tính lại.',
+  'payout.income.empty': 'Chưa có kỳ nào.',
+  'payout.income.period': 'Kỳ',
+  'payout.income.validMinutes': 'Phút hợp lệ',
+  'payout.income.gross': 'Tổng',
+  'payout.income.withheld': 'Thuế khấu trừ',
+  'payout.income.net': 'Thực nhận',
+  'payout.income.paidAt': 'Chi trả lúc',
+  'payout.income.updatedAt': 'Cập nhật lúc',
+  'payout.income.stale': 'Không kết nối được máy chủ — đang hiển thị bảng kê đã lưu lần trước.',
+  'payout.status.pending_review': 'Chờ duyệt',
+  'payout.status.approved': 'Đã duyệt, chờ chi trả',
+  'payout.status.paid': 'Đã chi trả',
+  'payout.status.on_hold': 'Đang xem xét',
+  'payout.status.unknown': 'Đang xử lý',
+  'payout.status.onHoldHint': 'Kỳ này cần thêm thời gian xem xét. Bạn không cần làm gì; kết quả sẽ hiện tại đây.',
 };
 
 export type MessageKey = keyof typeof vi;
@@ -339,6 +434,101 @@ const en: Record<MessageKey, string> = {
   'settlement.bill_generated': 'On a bill',
   'settlement.manually_paid': 'Paid manually',
   'settlement.exception': 'Held — being looked at',
+
+  'home.payout': 'Payout account',
+
+  'payout.title': 'Getting paid',
+  'payout.intro':
+    'Income is paid out through ZaloPay: to a ZaloPay wallet, a bank account or an ATM card. Declare it once; the server verifies it with ZaloPay and tells you the result.',
+  'payout.none': 'No payout account declared yet.',
+  'payout.declare': 'Declare a payout account',
+  'payout.change': 'Change payout account',
+  'payout.viewResult': 'View verification result',
+  'payout.income': 'Income statements by period',
+  'payout.current': 'Current account',
+  'payout.method': 'Method',
+  'payout.method.WALLET': 'ZaloPay wallet',
+  'payout.method.BANK_ACCOUNT': 'Bank account',
+  'payout.method.BANK_CARD': 'ATM card',
+  'payout.phone': 'ZaloPay wallet phone number',
+  'payout.bank': 'Bank',
+  'payout.accountNo': 'Account number',
+  'payout.cardNo': 'Card number',
+  'payout.holderName': 'Account holder name (as on your ID)',
+  'payout.last4': 'Ending in',
+  'payout.declaredName': 'Name you declared',
+  'payout.verifiedName': 'Name ZaloPay has on file',
+  'payout.verifiedAt': 'Verified at',
+  'payout.noStore':
+    'The account number is sent to the server for verification only and is not stored on this phone. Afterwards the app shows the last 4 digits only.',
+  'payout.submit': 'Submit for verification',
+  'payout.submitting': 'Submitting…',
+  'payout.offline':
+    'No connection. The declaration was not sent and will not be sent on its own — connect to the network and tap submit again.',
+  'payout.refused': 'The server did not accept this declaration. Check the details and submit again.',
+  'payout.invalid.name': 'Enter the account holder name.',
+  'payout.invalid.phone':
+    'A Vietnamese mobile number has 10 digits and starts with 0 (for example 090…). The server checks it again.',
+  'payout.invalid.bank': 'Choose a bank.',
+  'payout.invalid.number': 'Enter the account or card number, digits only.',
+  'payout.banksLoading': 'Loading the bank list…',
+  'payout.banksFailed': 'Could not load the bank list.',
+
+  'payout.result.title': 'Verification result',
+  'payout.result.none': 'No account to verify yet.',
+  'payout.result.verifiedTitle': 'ZaloPay confirms this account belongs to',
+  'payout.result.verifiedBody': 'Your income will be paid to this account.',
+  'payout.result.mismatchTitle': 'The two names do not match',
+  'payout.result.mismatchBody':
+    'The name you declared and the name ZaloPay has on file for this account differ. To avoid paying the wrong person, nothing is paid until the two match. You can correct the declared name, or declare an account that is in your name.',
+  'payout.result.fixName': 'Correct the declared name',
+  'payout.result.noWalletTitle': 'This number has no ZaloPay wallet',
+  'payout.result.noWalletBody':
+    'Create a ZaloPay wallet with exactly this phone number on ZaloPay’s page, then come back and declare again.',
+  'payout.result.openOnboarding': 'Open ZaloPay to create a wallet',
+  'payout.result.kycTitle': 'The wallet has reached its receiving limit',
+  'payout.result.kycBody':
+    'ZaloPay limits how much a wallet can receive until its verification is upgraded. Upgrade on ZaloPay’s page, then declare again.',
+  'payout.result.openReform': 'Raise the limit on ZaloPay',
+  'payout.result.lockedTitle': 'The ZaloPay wallet is locked',
+  'payout.result.lockedBody':
+    'ZaloPay has locked this wallet, so it cannot receive money. Your income is still recorded in full; it is paid once the wallet is active again, or once you declare another account in your name. Unlocking is ZaloPay’s to do — contact ZaloPay from inside the ZaloPay app.',
+  'payout.result.unverifiedTitle': 'The wallet’s identity is not verified',
+  'payout.result.unverifiedBody':
+    'ZaloPay has not verified the identity (KYC) behind this wallet. Complete verification in the ZaloPay app, then declare again.',
+  'payout.result.errorTitle': 'Could not be verified',
+  'payout.result.errorBody':
+    'ZaloPay did not recognise these details. Check the bank and the account or card number, then declare again.',
+  'payout.result.redeclare': 'Declare again',
+  'payout.result.other': 'Declare a different account',
+  'payout.result.contact': 'Contact support',
+
+  'payout.verify.unverified': 'Not verified',
+  'payout.verify.verified': 'Verified',
+  'payout.verify.name_mismatch': 'Name mismatch',
+  'payout.verify.no_wallet': 'No wallet',
+  'payout.verify.locked': 'Wallet locked',
+  'payout.verify.kyc_limit': 'At receiving limit',
+  'payout.verify.error': 'Could not verify',
+
+  'payout.income.title': 'Income statements',
+  'payout.income.intro':
+    'Each period is a statement the server drew up. Every figure here is the server’s; the app does not recompute anything.',
+  'payout.income.empty': 'No periods yet.',
+  'payout.income.period': 'Period',
+  'payout.income.validMinutes': 'Valid minutes',
+  'payout.income.gross': 'Gross',
+  'payout.income.withheld': 'Tax withheld',
+  'payout.income.net': 'Net',
+  'payout.income.paidAt': 'Paid at',
+  'payout.income.updatedAt': 'Last updated',
+  'payout.income.stale': 'Could not reach the server — showing the statements saved last time.',
+  'payout.status.pending_review': 'Awaiting review',
+  'payout.status.approved': 'Approved, awaiting payout',
+  'payout.status.paid': 'Paid',
+  'payout.status.on_hold': 'Under review',
+  'payout.status.unknown': 'In progress',
+  'payout.status.onHoldHint': 'This period needs more time to review. Nothing is needed from you; the result appears here.',
 };
 
 export const MESSAGES: Record<Locale, Record<MessageKey, string>> = { vi, en };

@@ -24,7 +24,13 @@ export type Route =
   | { name: 'provisioning' }
   | { name: 'sessionCreate' }
   | { name: 'uploads' }
-  | { name: 'income' };
+  | { name: 'income' }
+  // Payout (src/screens/payout/): the account, its declaration, ZaloPay's
+  // verdict on it, and the per-period statements.
+  | { name: 'payout' }
+  | { name: 'payoutDeclare' }
+  | { name: 'payoutResult' }
+  | { name: 'payoutIncome' };
 
 export type RouteName = Route['name'];
 
