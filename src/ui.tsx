@@ -134,6 +134,40 @@ export function ListScreen<T>({
   );
 }
 
+/**
+ * A read that failed, and the way out of it.
+ *
+ * The shape is `TaskDetail`'s, which was the only screen that had one: a
+ * sentence saying the load failed, and a button that tries again. Every other
+ * screen fell through to `data ?? []` and drew an empty list, so "the network
+ * is down" and "you have claimed nothing" looked identical — and the empty one
+ * is the answer a collector believes. Loading, failed and genuinely empty are
+ * three different screens now.
+ *
+ * `Note` carries the sentence, so the failure is announced to a screen reader
+ * (its live region) and is not a colour; `Button` carries the retry, so the
+ * tap target is the same 48dp as everywhere else.
+ */
+export function LoadFailed({ title, onRetry }: { title: string; onRetry: () => void }) {
+  const tt = useT();
+  return (
+    <Screen title={title}>
+      <Note text={tt('common.loadFailed')} />
+      <Button label={tt('common.retry')} onPress={onRetry} />
+    </Screen>
+  );
+}
+
+/** The same read, still in flight. Every screen says so the same way. */
+export function Loading({ title }: { title: string }) {
+  const tt = useT();
+  return (
+    <Screen title={title}>
+      <Body muted>{tt('common.loading')}</Body>
+    </Screen>
+  );
+}
+
 export function Card({ children }: { children: ReactNode }) {
   const theme = useTheme();
   return (

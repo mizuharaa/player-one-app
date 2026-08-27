@@ -3,7 +3,7 @@ import { useApi } from '../api/context.tsx';
 import { useNav } from '../nav.tsx';
 import { useT } from '../locale.tsx';
 import { useTheme } from '../theme.tsx';
-import { Body, CardLink, ListScreen, Row, Tag, Title } from '../ui.tsx';
+import { Body, CardLink, ListScreen, LoadFailed, Row, Tag, Title } from '../ui.tsx';
 
 /** APP-08: type, unit price, target, progress, claimable state. */
 export function TaskHall() {
@@ -13,12 +13,21 @@ export function TaskHall() {
   const theme = useTheme();
   const tasks = useQuery({ queryKey: ['tasks'], queryFn: () => api.tasks() });
 
+  // A failed read used to draw the same empty hall as a hall with no tasks in
+  // it, and the collector's reading of an empty hall is "there is no work
+  // today" — they close the app. It is a different screen now.
+  if (tasks.isError) {
+    return <LoadFailed title={tt('hall.title')} onRetry={() => void tasks.refetch()} />;
+  }
+
   return (
     <ListScreen
       title={tt('hall.title')}
       data={tasks.data ?? []}
       keyOf={(task) => task.id}
-      empty={tasks.data === undefined ? <Body muted>{tt('common.loading')}</Body> : null}
+      empty={
+        <Body muted>{tt(tasks.data === undefined ? 'common.loading' : 'hall.empty')}</Body>
+      }
       renderItem={(task) => {
         const full = task.claimants >= task.maxClaimants;
         return (

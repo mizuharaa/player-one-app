@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useApi } from '../api/context.tsx';
 import { useNav } from '../nav.tsx';
 import { useT } from '../locale.tsx';
-import { Body, CardLink, ListScreen, Row, Title } from '../ui.tsx';
+import { Body, CardLink, ListScreen, LoadFailed, Row, Title } from '../ui.tsx';
 
 /** APP-11: claimed tasks and their state. */
 export function MyTasks() {
@@ -15,12 +15,33 @@ export function MyTasks() {
   const titleOf = (taskId: string): string =>
     (tasks.data ?? []).find((t) => t.id === taskId)?.title ?? taskId;
 
+  // Both reads, not just the claims: a failed `tasks` read leaves every row
+  // titled with its raw task id, which is the same defect one layer down.
+  // "You have claimed nothing" is a claim about the collector's own work and
+  // must not be what a dead network looks like.
+  const failed = [claims, tasks].find((q) => q.isError);
+  if (failed !== undefined) {
+    return (
+      <LoadFailed
+        title={tt('mine.title')}
+        onRetry={() => {
+          void claims.refetch();
+          void tasks.refetch();
+        }}
+      />
+    );
+  }
+
   return (
     <ListScreen
       title={tt('mine.title')}
       data={claims.data ?? []}
       keyOf={(claim) => claim.id}
-      empty={claims.data !== undefined ? <Body muted>{tt('mine.empty')}</Body> : null}
+      empty={
+        <Body muted>
+          {tt(claims.data === undefined || tasks.data === undefined ? 'common.loading' : 'mine.empty')}
+        </Body>
+      }
       renderItem={(claim) => (
         <CardLink
           label={titleOf(claim.taskId)}

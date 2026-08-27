@@ -4,7 +4,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useApi } from '../api/context.tsx';
 import { useT } from '../locale.tsx';
 import { useTheme } from '../theme.tsx';
-import { Body, Button, Card, Choice, Note, Row, Screen, Title } from '../ui.tsx';
+import { Body, Button, Card, Choice, LoadFailed, Loading, Note, Row, Screen, Title } from '../ui.tsx';
 
 /**
  * APP-16/17: one session binds task + collector + device + scenario, before
@@ -82,6 +82,28 @@ export function SessionCreate() {
     },
     onSuccess: (session) => setCreatedId(session.id),
   });
+
+  // Every gate on this screen is drawn from a list, so a failed read turns
+  // into an instruction: no claims read becomes "Cần nhận một nhiệm vụ trước"
+  // and no devices read becomes "Cần liên kết thiết bị trước" — telling a
+  // collector to redo work they have already done. All three reads gate the
+  // form, so all three are checked, and none of them answers while unknown.
+  const failed = [claims, tasks, devices].find((q) => q.isError);
+  if (failed !== undefined) {
+    return (
+      <LoadFailed
+        title={tt('session.title')}
+        onRetry={() => {
+          void claims.refetch();
+          void tasks.refetch();
+          void devices.refetch();
+        }}
+      />
+    );
+  }
+  if (claims.data === undefined || tasks.data === undefined || devices.data === undefined) {
+    return <Loading title={tt('session.title')} />;
+  }
 
   const pick = <T,>(
     items: T[],
