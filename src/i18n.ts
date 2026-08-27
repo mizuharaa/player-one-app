@@ -27,6 +27,8 @@ const vi = {
   'common.retry': 'Thử lại',
   'common.loadFailed': 'Không tải được dữ liệu. Kiểm tra kết nối rồi thử lại.',
   'common.actionFailed': 'Không thực hiện được. Vui lòng thử lại.',
+  'common.needRegister': 'Cần tạo tài khoản trước khi tiếp tục.',
+  'common.unknownState': 'Trạng thái chưa xác định.',
 
   'register.title': 'Đăng ký',
   'register.intro': 'Tạo tài khoản người thu thập để nhận nhiệm vụ và được trả công theo phút hiệu quả.',
@@ -62,6 +64,10 @@ const vi = {
   'exam.submit': 'Nộp bài',
   'exam.passed': 'Đạt. Bạn có thể nhận nhiệm vụ.',
   'exam.failed': 'Chưa đạt. Xem lại phần đào tạo rồi thử lại.',
+  'exam.review': 'Xem lại đào tạo',
+  'exam.retry': 'Làm lại bài kiểm tra',
+  'exam.home': 'Về trang chính',
+  'exam.stillQualified': 'Lần kiểm tra trước của bạn vẫn còn hiệu lực. Bạn vẫn nhận được nhiệm vụ.',
 
   'home.tasks': 'Sảnh nhiệm vụ',
   'home.myTasks': 'Nhiệm vụ của tôi',
@@ -71,9 +77,10 @@ const vi = {
   'home.income': 'Thu nhập',
   'home.training': 'Đào tạo & kiểm tra',
   'home.gateExam': 'Chưa đạt bài kiểm tra — chưa thể nhận nhiệm vụ.',
-  'home.gateDevice': 'Chưa liên kết thiết bị — chưa thể tạo phiên thu thập.',
+  'home.gateDevice': 'Chưa liên kết thiết bị — chưa thể tạo phiên thu thập hay cấu hình thiết bị.',
 
   'hall.title': 'Sảnh nhiệm vụ',
+  'hall.empty': 'Hiện chưa có nhiệm vụ nào.',
   'hall.perMinute': 'đ/phút hiệu quả',
   'hall.progress': 'Tiến độ',
   'hall.slots': 'Người nhận',
@@ -98,6 +105,7 @@ const vi = {
   'detail.claiming': 'Đang nhận…',
   'detail.needAgreements': 'Cần đồng ý cả sáu thỏa thuận trước khi nhận nhiệm vụ.',
   'detail.needTraining': 'Cần hoàn thành đào tạo trước khi nhận nhiệm vụ.',
+  'detail.notFound': 'Không tìm thấy nhiệm vụ này.',
 
   'mine.title': 'Nhiệm vụ của tôi',
   'mine.empty': 'Chưa nhận nhiệm vụ nào.',
@@ -112,6 +120,8 @@ const vi = {
   'devices.bind': 'Liên kết thiết bị',
   'devices.boundAt': 'Liên kết lúc',
   'devices.provision': 'Cấu hình Wi-Fi qua Bluetooth',
+  'devices.serialEmpty': 'Chưa nhập số sê-ri thiết bị.',
+  'devices.alreadyBound': 'Thiết bị này đã được liên kết rồi.',
 
   'prov.title': 'Cấu hình thiết bị',
   'prov.hint':
@@ -125,7 +135,10 @@ const vi = {
   'prov.sent': 'Đã gửi cấu hình',
   'prov.readIp': 'Đọc địa chỉ IP',
   'prov.ip': 'Địa chỉ IP thiết bị',
-  'prov.failed': 'Chưa đọc được IP',
+  'prov.ssidEmpty': 'Chưa nhập tên Wi-Fi.',
+  'prov.notConfigured': 'Thiết bị chưa nhận cấu hình Wi-Fi. Gửi cấu hình trước.',
+  'prov.configuring': 'Thiết bị đang vào Wi-Fi. Đợi một lát rồi đọc lại địa chỉ IP.',
+  'prov.configureFailed': 'Thiết bị không vào được Wi-Fi. Kiểm tra tên và mật khẩu rồi gửi lại.',
   'prov.rssi': 'RSSI',
 
   'session.title': 'Tạo phiên thu thập',
@@ -155,6 +168,8 @@ const vi = {
     'Dữ liệu chỉ rời máy của bạn khi bạn xác nhận. Không bao giờ tự động, không bao giờ âm thầm.',
   'uploads.reason': 'Lý do',
   'uploads.empty': 'Chưa có tập dữ liệu nào.',
+  'uploads.uploadingHint':
+    'Đang tải lên trong nền. Bạn không cần chờ ở màn hình này — cứ tắt màn hình và làm việc khác.',
 
   'state.pending_upload': 'Chờ tải lên',
   'state.uploading': 'Đang tải lên',
@@ -190,6 +205,8 @@ const en: Record<MessageKey, string> = {
   'common.retry': 'Try again',
   'common.loadFailed': 'Could not load this. Check the connection and try again.',
   'common.actionFailed': 'That did not go through. Please try again.',
+  'common.needRegister': 'Create an account before continuing.',
+  'common.unknownState': 'Unknown state.',
 
   'register.title': 'Register',
   'register.intro': 'Create a collector account to claim tasks and be paid per effective minute.',
@@ -225,6 +242,10 @@ const en: Record<MessageKey, string> = {
   'exam.submit': 'Submit',
   'exam.passed': 'Passed. You can now claim tasks.',
   'exam.failed': 'Not passed. Review the training and try again.',
+  'exam.review': 'Review the training',
+  'exam.retry': 'Take the exam again',
+  'exam.home': 'Back to the home screen',
+  'exam.stillQualified': 'Your earlier pass still stands. You can still claim tasks.',
 
   'home.tasks': 'Task hall',
   'home.myTasks': 'My tasks',
@@ -234,9 +255,11 @@ const en: Record<MessageKey, string> = {
   'home.income': 'Income',
   'home.training': 'Training & exam',
   'home.gateExam': 'Exam not passed yet — tasks cannot be claimed.',
-  'home.gateDevice': 'No device bound yet — a collection session cannot be created.',
+  'home.gateDevice':
+    'No device bound yet — a collection session cannot be created and no device can be configured.',
 
   'hall.title': 'Task hall',
+  'hall.empty': 'No tasks are open right now.',
   'hall.perMinute': 'VND/effective minute',
   'hall.progress': 'Progress',
   'hall.slots': 'Claimants',
@@ -261,6 +284,7 @@ const en: Record<MessageKey, string> = {
   'detail.claiming': 'Claiming…',
   'detail.needAgreements': 'Accept all six agreements before claiming a task.',
   'detail.needTraining': 'Finish the training before claiming a task.',
+  'detail.notFound': 'This task could not be found.',
 
   'mine.title': 'My tasks',
   'mine.empty': 'No tasks claimed yet.',
@@ -275,6 +299,8 @@ const en: Record<MessageKey, string> = {
   'devices.bind': 'Bind device',
   'devices.boundAt': 'Bound at',
   'devices.provision': 'Configure Wi-Fi over Bluetooth',
+  'devices.serialEmpty': 'Enter the device serial number first.',
+  'devices.alreadyBound': 'This device is already bound.',
 
   'prov.title': 'Device setup',
   'prov.hint':
@@ -288,7 +314,11 @@ const en: Record<MessageKey, string> = {
   'prov.sent': 'Configuration sent',
   'prov.readIp': 'Read IP address',
   'prov.ip': 'Device IP address',
-  'prov.failed': 'Could not read an IP',
+  'prov.ssidEmpty': 'Enter the Wi-Fi name first.',
+  'prov.notConfigured': 'The device has no Wi-Fi configuration yet. Send it first.',
+  'prov.configuring': 'The device is still joining the Wi-Fi. Wait a moment, then read the IP again.',
+  'prov.configureFailed':
+    'The device could not join the Wi-Fi. Check the name and the password, then send it again.',
   'prov.rssi': 'RSSI',
 
   'session.title': 'Create collection session',
@@ -318,6 +348,8 @@ const en: Record<MessageKey, string> = {
     'Data leaves your phone only when you confirm it. Never automatically, never silently.',
   'uploads.reason': 'Reason',
   'uploads.empty': 'No episodes yet.',
+  'uploads.uploadingHint':
+    'Uploading in the background. You do not need to wait here — turn the screen off and get on with your work.',
 
   'state.pending_upload': 'Pending upload',
   'state.uploading': 'Uploading',

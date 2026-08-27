@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTransport } from '../device/transport-context.tsx';
 import type { BleDevice } from '../device/transport.ts';
 import { useT } from '../locale.tsx';
+import { codeKey } from '../errors.ts';
 import { useTheme } from '../theme.tsx';
 import { Body, Button, Card, CardLink, Field, Note, Row, Screen, Tag, Title } from '../ui.tsx';
 
@@ -23,6 +24,12 @@ export function Provisioning() {
   const [password, setPassword] = useState('');
   const [sent, setSent] = useState(false);
   const [ip, setIp] = useState<string | null>(null);
+  /**
+   * The device's own code, not a sentence — `empty_ssid`, or one of
+   * EgoLowBle's IP_RESULT_* values. It used to be printed as it arrived,
+   * appended to "Chưa đọc được IP", which was also the wrong sentence for a
+   * Wi-Fi failure. `src/errors.ts` turns each code into its own.
+   */
   const [failure, setFailure] = useState<string | null>(null);
 
   return (
@@ -74,15 +81,15 @@ export function Provisioning() {
                   setFailure(null);
                 } else {
                   setIp(null);
-                  setFailure(r.reason);
+                  // The result code, not `r.reason`: the reason is free text
+                  // from the firmware, the code is the closed set.
+                  setFailure(r.result);
                 }
               })
             }
           />
           {ip !== null ? <Row label={tt('prov.ip')} value={ip} /> : null}
-          {failure !== null ? (
-            <Note text={`${tt('prov.failed')}: ${failure}`} />
-          ) : null}
+          {failure !== null ? <Note text={tt(codeKey(failure))} /> : null}
         </Card>
       ) : null}
     </Screen>

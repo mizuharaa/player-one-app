@@ -2,24 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApi } from '../api/context.tsx';
 import { useNav, useRoute } from '../nav.tsx';
 import { useT } from '../locale.tsx';
-import { Body, Button, Card, Note, Row, Screen, Title } from '../ui.tsx';
-import type { MessageKey } from '../i18n.ts';
-
-/**
- * The server's refusal, in the collector's language. Anything unrecognised
- * falls back to a generic message rather than showing an English error code
- * to a Vietnamese collector (LOC-01).
- */
-const CLAIM_ERRORS: Record<string, MessageKey> = {
-  exam_not_passed: 'detail.needExam',
-  agreements_incomplete: 'detail.needAgreements',
-  training_incomplete: 'detail.needTraining',
-  task_at_capacity: 'detail.full',
-  already_claimed: 'detail.claimed',
-};
-
-const claimErrorKey = (error: unknown): MessageKey =>
-  CLAIM_ERRORS[error instanceof Error ? error.message : ''] ?? 'common.actionFailed';
+import { errorKey } from '../errors.ts';
+import { Body, Button, Card, LoadFailed, Note, Row, Screen, Title } from '../ui.tsx';
 
 /**
  * APP-09 (instructions, scenario, privacy notice, payment rule) and APP-10
@@ -54,20 +38,20 @@ export function TaskDetail() {
   // so a failed read of either used to become a business answer — "you have
   // not passed the exam", "you have not claimed this" — when the truth was
   // "we do not know". Unknown state offers no action; it offers a retry.
+  //
+  // The block itself now lives in `ui.tsx` as `LoadFailed`, because six other
+  // screens needed the same one and a second copy is how two of them drift.
   const failed = [task, profile, claims].find((q) => q.isError);
   if (failed !== undefined) {
     return (
-      <Screen title={tt('detail.title')}>
-        <Note text={tt('common.loadFailed')} />
-        <Button
-          label={tt('common.retry')}
-          onPress={() => {
-            void task.refetch();
-            void profile.refetch();
-            void claims.refetch();
-          }}
-        />
-      </Screen>
+      <LoadFailed
+        title={tt('detail.title')}
+        onRetry={() => {
+          void task.refetch();
+          void profile.refetch();
+          void claims.refetch();
+        }}
+      />
     );
   }
   if (task.data === undefined || profile.data === undefined || claims.data === undefined) {
@@ -112,7 +96,7 @@ export function TaskDetail() {
         in flight — is what stops a collector tapping four times and being told
         nothing four times.
       */}
-      {claim.isError ? <Note text={tt(claimErrorKey(claim.error))} /> : null}
+      {claim.isError ? <Note text={tt(errorKey(claim.error))} /> : null}
       <Button
         label={claim.isPending ? tt('detail.claiming') : alreadyClaimed ? tt('detail.claimed') : tt('detail.claim')}
         disabled={!examPassed || full || alreadyClaimed || claim.isPending}

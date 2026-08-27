@@ -3,16 +3,20 @@ import { useQuery } from '@tanstack/react-query';
 import { useApi } from '../api/context.tsx';
 import { useT } from '../locale.tsx';
 import { useTheme } from '../theme.tsx';
-import { Body, ListScreen, Row, Tag, Title } from '../ui.tsx';
+import { Body, ListScreen, LoadFailed, Row, Tag, Title } from '../ui.tsx';
 import type { MessageKey } from '../i18n.ts';
 
 /**
  * The five values `settlements.settlement_state` can hold
  * (`packages/store/src/schema.ts`), in the collector's language. The screen
  * used to print the raw column value, so a Vietnamese collector read
- * "bill_generated". An unknown value falls back to itself rather than
- * disappearing — a state the server invented later should be visible, not
- * silently blank.
+ * "bill_generated".
+ *
+ * A value outside the five stays visible rather than going silently blank —
+ * a state the server invents later should be seen. It used to fall back to
+ * itself, which put the identifier back on screen, so it falls back to a
+ * Vietnamese sentence instead: the row is still there, still says the state is
+ * one the app does not know, and still says it in the collector's language.
  */
 const SETTLEMENT_STATES: Record<string, MessageKey> = {
   pending_review: 'settlement.pending_review',
@@ -22,10 +26,8 @@ const SETTLEMENT_STATES: Record<string, MessageKey> = {
   exception: 'settlement.exception',
 };
 
-const settlementLabel = (tt: (key: MessageKey) => string, state: string): string => {
-  const key = SETTLEMENT_STATES[state];
-  return key === undefined ? state : tt(key);
-};
+const settlementLabel = (tt: (key: MessageKey) => string, state: string): string =>
+  tt(SETTLEMENT_STATES[state] ?? 'common.unknownState');
 
 /**
  * APP-33/34: per-episode effective minutes, amount and settlement state —
@@ -40,12 +42,20 @@ export function Income() {
   const theme = useTheme();
   const income = useQuery({ queryKey: ['income'], queryFn: () => api.income() });
 
+  // This is the screen where an empty list is worst: "no income yet" is a
+  // statement about the collector's pay, and a failed read used to make it.
+  if (income.isError) {
+    return <LoadFailed title={tt('income.title')} onRetry={() => void income.refetch()} />;
+  }
+
   return (
     <ListScreen
       title={tt('income.title')}
       data={income.data ?? []}
       keyOf={(entry) => entry.episodeId}
-      empty={income.data !== undefined ? <Body muted>{tt('income.empty')}</Body> : null}
+      empty={
+        <Body muted>{tt(income.data === undefined ? 'common.loading' : 'income.empty')}</Body>
+      }
       renderItem={(entry) => {
         const confirmed = entry.kind === 'confirmed';
         return (

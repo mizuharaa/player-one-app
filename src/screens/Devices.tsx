@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApi } from '../api/context.tsx';
 import { useNav } from '../nav.tsx';
 import { useT } from '../locale.tsx';
-import { Body, Button, Card, Field, Note, Row, Screen, Title } from '../ui.tsx';
+import { errorKey } from '../errors.ts';
+import { Body, Button, Card, Field, LoadFailed, Loading, Note, Row, Screen, Title } from '../ui.tsx';
 
 /**
  * APP-14/18: bind by QR or typed serial; list what is bound. The QR path is a
@@ -29,12 +30,19 @@ export function Devices() {
     },
   });
 
+  // A failed read of the bound-device list used to render as "no device bound
+  // yet", which is a business answer to a question nobody could answer, and it
+  // is the answer that sends a collector off to bind a device they already
+  // have. Unknown state offers a retry instead (same rule as TaskDetail).
+  if (devices.isError) {
+    return <LoadFailed title={tt('devices.title')} onRetry={() => void devices.refetch()} />;
+  }
+  if (devices.data === undefined) return <Loading title={tt('devices.title')} />;
+
   return (
     <Screen title={tt('devices.title')}>
-      {devices.data !== undefined && devices.data.length === 0 ? (
-        <Body muted>{tt('devices.empty')}</Body>
-      ) : null}
-      {(devices.data ?? []).map((d) => (
+      {devices.data.length === 0 ? <Body muted>{tt('devices.empty')}</Body> : null}
+      {devices.data.map((d) => (
         <Card key={d.serial}>
           <Title>{d.serial}</Title>
           <Row label={tt('devices.boundAt')} value={new Date(d.boundAt).toLocaleString()} />
@@ -49,12 +57,19 @@ export function Devices() {
           disabled={serial.trim() === ''}
           onPress={() => bind.mutate(serial)}
         />
-        {bind.isError ? <Note text={String((bind.error as Error).message)} /> : null}
+        {/*
+          The server's refusal, translated. This printed `bind.error.message`
+          — so a Vietnamese collector who scanned the same camera twice read
+          the string `already_bound`, and one who tapped Bind with an empty
+          field read `serial_empty`. The codes are a protocol; `src/errors.ts`
+          is where they become sentences.
+        */}
+        {bind.isError ? <Note text={tt(errorKey(bind.error))} /> : null}
       </Card>
       <Button
         label={tt('devices.provision')}
         kind="ghost"
-        disabled={(devices.data ?? []).length === 0}
+        disabled={devices.data.length === 0}
         onPress={() => nav.push({ name: 'provisioning' })}
       />
     </Screen>
