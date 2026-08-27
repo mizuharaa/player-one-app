@@ -18,7 +18,9 @@ export function Home() {
   const profile = useQuery({ queryKey: ['profile'], queryFn: () => api.profile() });
   const devices = useQuery({ queryKey: ['devices'], queryFn: () => api.boundDevices() });
 
-  const links: { key: MessageKey; route: Route }[] = [
+  const noDevice = (devices.data ?? []).length === 0;
+
+  const links: { key: MessageKey; route: Route; disabled?: boolean }[] = [
     { key: 'home.tasks', route: { name: 'taskHall' } },
     { key: 'home.myTasks', route: { name: 'myTasks' } },
     { key: 'home.devices', route: { name: 'devices' } },
@@ -26,6 +28,14 @@ export function Home() {
     { key: 'home.uploads', route: { name: 'uploads' } },
     { key: 'home.income', route: { name: 'income' } },
     { key: 'home.training', route: { name: 'training' } },
+    // Wi-Fi provisioning was reachable only by going to Devices first and
+    // finding the button at the bottom of it — a screen a collector visits
+    // once, to bind, and has no reason to open again when the camera later
+    // will not reach the network. The gate is the same one Devices applies:
+    // nothing to configure until something is bound. Unknown counts as none,
+    // which is the safe direction, and `home.gateDevice` above says why the
+    // button is grey.
+    { key: 'devices.provision', route: { name: 'provisioning' }, disabled: noDevice },
   ];
 
   return (
@@ -37,7 +47,13 @@ export function Home() {
         <Note text={tt('home.gateDevice')} />
       ) : null}
       {links.map((l) => (
-        <Button key={l.key} kind="ghost" label={tt(l.key)} onPress={() => nav.push(l.route)} />
+        <Button
+          key={l.key}
+          kind="ghost"
+          label={tt(l.key)}
+          disabled={l.disabled}
+          onPress={() => nav.push(l.route)}
+        />
       ))}
       <Button
         kind="ghost"
