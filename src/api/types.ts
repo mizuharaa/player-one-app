@@ -105,11 +105,35 @@ export const EPISODE_STATES = [
 
 export type EpisodeState = (typeof EPISODE_STATES)[number];
 
+/**
+ * A sentence the server wrote in both of the app's languages.
+ *
+ * `GET /api/me/episodes` and `GET /api/me/income` return `state_text: {en, vi}`
+ * alongside every state, and the sentence is the server's to write, not the
+ * app's to compose: the collector-facing state vocabulary
+ * (`uploaded | approved | not_paid | on_a_bill | action_needed | waiting_on_us |
+ * on_hold | being_rechecked | paid | cannot_be_paid | unknown`) is a different
+ * and larger set than APP-23's six upload states, and inventing a Vietnamese
+ * sentence for it here would be a second source of truth for what a collector
+ * is told about their own money. The app renders the server's sentence; the
+ * `state` field below survives only to choose a colour.
+ */
+export interface LocalisedText {
+  vi: string;
+  en: string;
+}
+
 export interface EpisodeUpload {
   episodeId: string;
-  sessionId: string;
+  /**
+   * Optional: the mock knows which session produced an episode, and
+   * `GET /api/me/episodes` does not return it. Nothing on screen uses it.
+   */
+  sessionId?: string;
   sizeBytes: number;
   state: EpisodeState;
+  /** The server's own sentence for this state, when the server supplied one. */
+  stateText?: LocalisedText;
   /** APP-27: a failed review names its reason, in the collector's language. */
   rejectReason?: string;
 }
@@ -122,6 +146,8 @@ export interface IncomeEntry {
   /** APP-34: estimated is never presented as confirmed. */
   kind: 'estimated' | 'confirmed';
   settlementState: string | null;
+  /** The server's own sentence for `settlementState`, when it supplied one. */
+  settlementText?: LocalisedText;
 }
 
 /**

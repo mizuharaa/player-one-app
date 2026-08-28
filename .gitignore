@@ -4,3 +4,5 @@ android/
 ios/
 .expo/
 *.log
+# `npx expo export` output, which is one of this repo's verification steps
+dist/

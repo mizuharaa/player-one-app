@@ -15,7 +15,8 @@
             "minSdkVersion": 28
           }
         }
-      ]
+      ],
+      "expo-secure-store"
     ]
   }
 }

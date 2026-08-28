@@ -1,5 +1,13 @@
 import type { ReactNode } from 'react';
-import { FlatList, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import {
+  FlatList,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+  type TextInputProps,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNav } from './nav.tsx';
 import { useT } from './locale.tsx';
@@ -377,11 +385,20 @@ export function Field({
   value,
   onChangeText,
   secure = false,
+  keyboardType,
+  autoComplete,
+  editable = true,
 }: {
   label: string;
   value: string;
   onChangeText: (v: string) => void;
   secure?: boolean;
+  /** `phone-pad` and `number-pad` for the sign-in screen; text everywhere else. */
+  keyboardType?: TextInputProps['keyboardType'];
+  /** `tel` and `sms-otp` let Android fill the number and the code itself. */
+  autoComplete?: TextInputProps['autoComplete'];
+  /** A field whose value is settled — the phone number, once the code is sent. */
+  editable?: boolean;
 }) {
   const theme = useTheme();
   return (
@@ -391,14 +408,25 @@ export function Field({
         value={value}
         onChangeText={onChangeText}
         secureTextEntry={secure}
+        keyboardType={keyboardType}
+        autoComplete={autoComplete}
+        editable={editable}
         accessibilityLabel={label}
+        // A locked field is announced as such rather than only drawn greyer:
+        // "not editable" carried by a background colour alone is exactly the
+        // failure this app does not ship. The ink stays `foreground` either
+        // way, because the value in it — the collector's own phone number —
+        // still has to be readable to check.
+        accessibilityState={{ disabled: !editable }}
         style={{
-          backgroundColor: theme.color.background,
+          backgroundColor: editable ? theme.color.background : theme.color.muted,
           borderColor: theme.color.borderStrong,
           borderWidth: 1,
           borderRadius: theme.radius.sm,
           paddingVertical: theme.space[2],
           paddingHorizontal: theme.space[3],
+          // Android's minimum touch target, same 48dp as `Button` and `Choice`.
+          minHeight: theme.space[12],
           color: theme.color.foreground,
           fontSize: theme.fontSize.base,
         }}

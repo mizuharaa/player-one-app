@@ -13,6 +13,9 @@ import { BackHandler } from 'react-native';
  * error, not a dead link found at runtime.
  */
 export type Route =
+  // Only reachable when this build talks to a server (`src/api/config.ts`).
+  // Against the mock the stack opens on `register`, exactly as before.
+  | { name: 'signIn' }
   | { name: 'register' }
   | { name: 'agreements' }
   | { name: 'training' }

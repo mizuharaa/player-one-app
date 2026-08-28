@@ -58,6 +58,29 @@ either end, or a Windows firewall prompt that got dismissed — `npx expo start
 --tunnel` relays through Expo's servers instead. Slower, and both ends must be
 online.
 
+### Talk to the real server
+
+```sh
+EXPO_PUBLIC_API_URL=http://192.168.1.10:8080 npx expo start
+```
+
+The laptop's LAN address, not `localhost` — `localhost` on the phone is the
+phone. The platform API listens on `PORT`, default 8080. Expo inlines
+`EXPO_PUBLIC_*` into the bundle when Metro starts, so this is chosen by
+restarting the dev server and by nothing inside the app: a toggle on a collector's
+phone would let them point it at a machine that is not the platform.
+
+With it set the app opens on a sign-in screen — phone number, then the six-digit
+code the server sends. The token is a 30-day one and lives in
+`expo-secure-store`, never in the JSON state file. A 401 wipes it, wipes every
+cached money figure with it, and returns to sign-in; a shared phone is normal in
+this pilot, so the sign-out button on the home screen does the same thing on
+purpose.
+
+**Which screens change:** Income and Uploads read the server. Everything else is
+still the mock — see "Onboarding is still local" under the ceilings. Unset the
+variable and the app is exactly what it was.
+
 ### The version delta, on purpose
 
 PRODUCT.md in the platform repo says **React Native 0.82**. This repo pins
@@ -97,7 +120,7 @@ Read that literally before quoting progress from it:
 | | State |
 |---|---|
 | Screens | All thirteen exist and are reachable; the route registry is `Record<RouteName, ComponentType>`, so a missing screen is a compile error. |
-| Server | `MockCollectorApi` — in memory, one process. There is no HTTP client and no auth. |
+| Server | **Two builds, one environment variable.** Unset `EXPO_PUBLIC_API_URL` (the default) is `MockCollectorApi`, in memory, one process, no network. Set it and the app signs in for real and reads income and episode states from the platform API; everything else still comes from the mock, because the server has no route for it. See "Talk to the real server" below. |
 | Device | `MockDeviceTransport` / `MockDeviceTransfer` — no BLE, no Wi-Fi, no file transfer. See `DEVICE_DEPS.md`. |
 | Persistence | **One JSON file** in the document directory, written synchronously inside every mutation (`src/api/persist.ts`). Registration, agreements, the exam result, claims, bound devices, sessions and the upload queue survive a kill (NFR-03, NFR-04). Not a sync engine and not SQLite — see the ceilings below. |
 | Native project | **None checked in.** `android/` is `expo prebuild` output and is gitignored; prebuild has never been run here. Metro and Babel use Expo's defaults, so there is no config file for either. |
@@ -181,13 +204,18 @@ Every one of these is marked `ponytail:` at the place it bites:
 - QR device binding is a fixed serial; VisionCamera needs a native build
   (`src/screens/Devices.tsx`).
 - Training and exam content is a shell. PaXini owes it.
-- No login, logout or token. A returning collector now resumes at the first
-  onboarding step they had not finished (`src/resume.ts`) instead of always
-  opening on registration, but only because their file is still on the phone —
-  that is not authentication and it is not a session. It exists because
-  `Register` overwrites the profile, so opening a restored collector on it would
-  destroy the state that was just restored. A real sign-in needs an auth
-  endpoint that does not exist.
+- **Onboarding is still local, in both builds.** Registration, the six
+  agreements, training, the exam, the task hall, claiming, device binding and
+  session creation have no server route on any branch, so they still run against
+  the mock even when the app is signed in. A signed-in collector is therefore
+  asked to register, which reads oddly and is honest: the token proves who they
+  are, and nothing on the server yet knows what they have agreed to. Each of
+  those is one delegating line in `src/api/http.ts`, to be deleted as its route
+  lands.
+- Sign-in exists and is real (`src/screens/SignIn.tsx`, `src/auth.ts`), but only
+  in the server build. The mock build has no sign-in screen and no token, and a
+  returning collector still resumes at the first onboarding step they had not
+  finished (`src/resume.ts`) because their file is still on the phone.
 - Agreements show a title and a version, not a document. There is no body,
   effective date, or server-supplied current version, so the revision path
   cannot be exercised — consent here is a mechanism, not yet informed consent

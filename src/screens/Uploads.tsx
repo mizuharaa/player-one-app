@@ -3,7 +3,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { EpisodeState } from '../api/types.ts';
 import { useApi } from '../api/context.tsx';
-import { useT } from '../locale.tsx';
+import { useLocale, useT } from '../locale.tsx';
 import { useTheme } from '../theme.tsx';
 import type { NativeTheme } from '../design/native.ts';
 import { Body, Button, Card, ListScreen, LoadFailed, Note, Row, Tag, Title } from '../ui.tsx';
@@ -35,6 +35,7 @@ const gb = (bytes: number): string => `${(bytes / 1024 ** 3).toFixed(1)} GB`;
 export function Uploads() {
   const api = useApi();
   const tt = useT();
+  const { locale } = useLocale();
   const theme = useTheme();
   const queryClient = useQueryClient();
   /** The episode whose confirmation step is open. One at a time, on purpose. */
@@ -72,7 +73,18 @@ export function Uploads() {
           <Card>
             <Title>{episode.episodeId}</Title>
             <Row label={tt('uploads.size')} value={gb(episode.sizeBytes)} />
-            <Tag label={tt(`state.${episode.state}`)} fg={colors.fg} bg={colors.bg} />
+            {/*
+              `GET /api/me/episodes` carries the sentence with the state, in
+              both of the app's languages, and the server's collector-facing
+              vocabulary is wider than APP-23's six. When it sent one, it is
+              what the collector reads; `state` behind it only picks a colour,
+              which is never the only thing carrying the state.
+            */}
+            <Tag
+              label={episode.stateText?.[locale] ?? tt(`state.${episode.state}`)}
+              fg={colors.fg}
+              bg={colors.bg}
+            />
             {episode.rejectReason !== undefined ? (
               <Row label={tt('uploads.reason')} value={episode.rejectReason} />
             ) : null}

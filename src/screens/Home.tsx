@@ -3,7 +3,8 @@ import { useApi } from '../api/context.tsx';
 import { useNav, type Route } from '../nav.tsx';
 import { useLocale, useT } from '../locale.tsx';
 import type { MessageKey } from '../i18n.ts';
-import { Button, Note, Screen } from '../ui.tsx';
+import { useSession } from '../session.tsx';
+import { Button, Note, Row, Screen } from '../ui.tsx';
 
 /**
  * The hub. Every screen is one tap from here, and the two gates that shape
@@ -14,6 +15,7 @@ export function Home() {
   const nav = useNav();
   const tt = useT();
   const { locale, setLocale } = useLocale();
+  const { session, signOut } = useSession();
 
   const profile = useQuery({ queryKey: ['profile'], queryFn: () => api.profile() });
   const devices = useQuery({ queryKey: ['devices'], queryFn: () => api.boundDevices() });
@@ -60,6 +62,18 @@ export function Home() {
         label={tt('common.language')}
         onPress={() => setLocale(locale === 'vi' ? 'en' : 'vi')}
       />
+      {/*
+        Signing out is only on the screen when there is a session to end — the
+        mock build has none. It says whose session it is first: a shared phone
+        is normal in this pilot, and the collector about to record needs to see
+        that the app still thinks it is the previous one.
+      */}
+      {session !== null ? (
+        <>
+          <Row label={tt('signin.signedInAs')} value={session.phone} />
+          <Button kind="ghost" label={tt('signin.signOut')} onPress={signOut} />
+        </>
+      ) : null}
     </Screen>
   );
 }

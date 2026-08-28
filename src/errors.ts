@@ -35,6 +35,16 @@ const ERRORS: Record<string, MessageKey> = {
   not_configured: 'prov.notConfigured',
   configuring: 'prov.configuring',
   configure_failed: 'prov.configureFailed',
+  // src/api/http.ts. The server's own refusals never reach here: its 409 bodies
+  // carry `constraint` values like `upload_foreign_session` and its 400s carry
+  // raw validation output, and both are internal names a collector must never
+  // read. The HTTP client converts them to the short codes below before they
+  // leave it, and anything it did not convert still lands on the generic
+  // sentence rather than on screen as an identifier.
+  network: 'common.loadFailed',
+  unauthorized: 'signin.expired',
+  bad_code: 'signin.badCode',
+  rate_limited: 'common.rateLimited',
 };
 
 /** The generic sentence an unknown code becomes. */

@@ -29,6 +29,28 @@ const vi = {
   'common.actionFailed': 'Không thực hiện được. Vui lòng thử lại.',
   'common.needRegister': 'Cần tạo tài khoản trước khi tiếp tục.',
   'common.unknownState': 'Trạng thái chưa xác định.',
+  'common.rateLimited': 'Bạn đã thử quá nhiều lần. Đợi một lát rồi thử lại.',
+
+  // The sign-in flow. It exists only when this build talks to a server
+  // (`src/api/config.ts`); against the mock the app still opens on registration.
+  'signin.title': 'Đăng nhập',
+  'signin.intro':
+    'Nhập số điện thoại của bạn. Hệ thống gửi một mã xác minh; nhập mã đó để đăng nhập.',
+  'signin.phone': 'Số điện thoại',
+  'signin.sendCode': 'Gửi mã xác minh',
+  'signin.sending': 'Đang gửi…',
+  'signin.codeSent': 'Đã gửi mã xác minh đến số điện thoại này.',
+  'signin.code': 'Mã xác minh',
+  'signin.verify': 'Đăng nhập',
+  'signin.verifying': 'Đang đăng nhập…',
+  'signin.changePhone': 'Đổi số điện thoại',
+  'signin.phoneMissing': 'Nhập số điện thoại trước.',
+  'signin.codeMissing': 'Nhập mã xác minh trước.',
+  'signin.badCode': 'Mã không đúng hoặc đã hết hạn. Gửi mã mới rồi thử lại.',
+  'signin.expired': 'Phiên đăng nhập đã hết hạn. Đăng nhập lại.',
+  'signin.signOut': 'Đăng xuất',
+  'signin.signedInAs': 'Đang đăng nhập bằng số',
+  'signin.shared': 'Máy dùng chung: đăng xuất khi bạn đưa điện thoại cho người khác.',
 
   'register.title': 'Đăng ký',
   'register.intro': 'Tạo tài khoản người thu thập để nhận nhiệm vụ và được trả công theo phút hiệu quả.',
@@ -179,6 +201,10 @@ const vi = {
   'uploads.empty': 'Chưa có tập dữ liệu nào.',
   'uploads.uploadingHint':
     'Đang tải lên trong nền. Bạn không cần chờ ở màn hình này — cứ tắt màn hình và làm việc khác.',
+  'uploads.progress': 'Đã gửi',
+  'uploads.interrupted': 'Lần gửi trước bị gián đoạn. Phần đã gửi được giữ lại.',
+  'uploads.resume': 'Tiếp tục tải lên',
+  'uploads.noFile': 'Chưa có tệp trên máy để gửi. Lấy dữ liệu từ thiết bị trước.',
 
   'state.pending_upload': 'Chờ tải lên',
   'state.uploading': 'Đang tải lên',
@@ -195,6 +221,9 @@ const vi = {
   'income.settlement': 'Thanh toán',
   'income.estimatedHint': 'Ước tính — con số cuối cùng do máy chủ quyết định sau khi duyệt.',
   'income.empty': 'Chưa có thu nhập nào.',
+  // A money figure on screen without the moment it was read is a lie the next
+  // minute. Every number on this screen is stamped.
+  'income.fetchedAt': 'Số liệu đọc lúc',
   'settlement.pending_review': 'Chờ duyệt',
   'settlement.pending_settlement': 'Chờ thanh toán',
   'settlement.bill_generated': 'Đã lập bảng kê',
@@ -216,6 +245,26 @@ const en: Record<MessageKey, string> = {
   'common.actionFailed': 'That did not go through. Please try again.',
   'common.needRegister': 'Create an account before continuing.',
   'common.unknownState': 'Unknown state.',
+  'common.rateLimited': 'Too many attempts. Wait a moment, then try again.',
+
+  'signin.title': 'Sign in',
+  'signin.intro':
+    'Enter your phone number. The system sends a verification code; enter that code to sign in.',
+  'signin.phone': 'Phone number',
+  'signin.sendCode': 'Send verification code',
+  'signin.sending': 'Sending…',
+  'signin.codeSent': 'A verification code has been sent to this phone number.',
+  'signin.code': 'Verification code',
+  'signin.verify': 'Sign in',
+  'signin.verifying': 'Signing in…',
+  'signin.changePhone': 'Use a different phone number',
+  'signin.phoneMissing': 'Enter the phone number first.',
+  'signin.codeMissing': 'Enter the verification code first.',
+  'signin.badCode': 'That code is wrong or has expired. Send a new code and try again.',
+  'signin.expired': 'Your session has expired. Sign in again.',
+  'signin.signOut': 'Sign out',
+  'signin.signedInAs': 'Signed in as',
+  'signin.shared': 'Shared phone: sign out when you hand it to someone else.',
 
   'register.title': 'Register',
   'register.intro': 'Create a collector account to claim tasks and be paid per effective minute.',
@@ -364,6 +413,10 @@ const en: Record<MessageKey, string> = {
   'uploads.empty': 'No episodes yet.',
   'uploads.uploadingHint':
     'Uploading in the background. You do not need to wait here — turn the screen off and get on with your work.',
+  'uploads.progress': 'Sent',
+  'uploads.interrupted': 'The last attempt was interrupted. The part already sent is kept.',
+  'uploads.resume': 'Resume upload',
+  'uploads.noFile': 'There is no file on this phone to send yet. Pull the data off the device first.',
 
   'state.pending_upload': 'Pending upload',
   'state.uploading': 'Uploading',
@@ -380,6 +433,7 @@ const en: Record<MessageKey, string> = {
   'income.settlement': 'Settlement',
   'income.estimatedHint': 'An estimate — the final figure is the server’s, after review.',
   'income.empty': 'No income yet.',
+  'income.fetchedAt': 'Figures read at',
   'settlement.pending_review': 'Awaiting review',
   'settlement.pending_settlement': 'Awaiting settlement',
   'settlement.bill_generated': 'On a bill',
