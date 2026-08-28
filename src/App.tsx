@@ -12,6 +12,7 @@ import { LocaleProvider } from './locale.tsx';
 import { SessionProvider, type SessionControl } from './session.tsx';
 import { NavProvider, useNav, type Route, type RouteName } from './nav.tsx';
 import { ThemeProvider } from './theme.tsx';
+import { expoSource, loadQueue, presignedPut } from './upload/expo.ts';
 import { SignIn } from './screens/SignIn.tsx';
 import { Agreements } from './screens/Agreements.tsx';
 import { Devices } from './screens/Devices.tsx';
@@ -146,8 +147,14 @@ export function App() {
           onUnauthorized: () => signOut(),
         },
         mock,
+        { queue: await loadQueue(), open: expoSource, put: presignedPut },
       );
       setBoot({ api, start });
+      // Deliveries the collector already authorised and the app was killed in
+      // the middle of. Finishing one is not starting one, so APP-25 is intact:
+      // nothing reaches that queue without a tap through the confirmation, and
+      // an episode with no delivery on the queue does nothing here.
+      if (restored !== null) api.resumeUploads();
     })();
   }, [signOut]);
 

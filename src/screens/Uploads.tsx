@@ -109,6 +109,31 @@ export function Uploads() {
                 </View>
               </View>
             ) : null}
+            {/*
+              How far the upload worker has actually got. A number, not the
+              spinner above: on a metered connection "how much of my data has
+              this used" is a question the spinner cannot answer, and after an
+              interruption it is the difference between "start again" and "carry
+              on from here".
+            */}
+            {episode.delivery !== undefined ? (
+              <Row
+                label={tt('uploads.progress')}
+                value={`${gb(episode.delivery.sentBytes)} / ${gb(episode.delivery.totalBytes)}`}
+              />
+            ) : null}
+            {episode.delivery?.interrupted === true ? (
+              <Note text={tt('uploads.interrupted')} />
+            ) : null}
+            {/*
+              `uploading` with nothing on the queue: the collector authorised
+              this episode and there is no file on the phone to send, because
+              pulling it off the device is still a mock. Saying so beats a
+              spinner that turns for ever.
+            */}
+            {episode.state === 'uploading' && episode.delivery === undefined ? (
+              <Note text={tt('uploads.noFile')} />
+            ) : null}
             {episode.state === 'pending_upload' && confirming !== episode.episodeId ? (
               <Button label={tt('uploads.upload')} onPress={() => setConfirming(episode.episodeId)} />
             ) : null}

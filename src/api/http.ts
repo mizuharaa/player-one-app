@@ -1,4 +1,6 @@
 import { ApiError } from './mock.ts';
+import type { UploadQueue } from '../upload/queue.ts';
+import type { PartBody, PartSource } from '../upload/worker.ts';
 import type {
   AgreementId,
   BoundDevice,
@@ -264,7 +266,20 @@ const reasonLabels = (reasons: unknown): string | undefined => {
   return labels.length === 0 ? undefined : labels.join(' · ');
 };
 
+/**
+ * The three phone-shaped things the upload worker needs, supplied by
+ * `src/upload/expo.ts`. Optional: a build with no queue simply never uploads.
+ */
+export interface UploadDriver {
+  queue: UploadQueue;
+  open: (uri: string) => PartSource;
+  put: (url: string, body: PartBody) => Promise<void>;
+}
+
 export class HttpCollectorApi implements CollectorApi {
+  /** One pass at a time. Two would race for the same delivery's parts. */
+  private running = false;
+
   constructor(
     private readonly config: HttpConfig,
     /**
@@ -272,7 +287,37 @@ export class HttpCollectorApi implements CollectorApi {
      * mock the app already ran on, unchanged — see the file comment.
      */
     private readonly fallback: CollectorApi,
+    private readonly uploads?: UploadDriver,
   ) {}
+
+  /**
+   * Carry on with deliveries the collector has already authorised.
+   *
+   * Called once at boot and again after each `confirmUpload`. This is not an
+   * auto-upload and does not break APP-25: nothing reaches this queue that a
+   * collector did not tap through the confirmation for, and the tap is what
+   * authorises the episode rather than the individual attempt. A delivery
+   * killed halfway is finished, not started.
+   *
+   * Not awaited by its callers. It runs for as long as gigabytes take, and no
+   * screen waits on it — the Uploads screen reads the byte count out of the
+   * queue on its next read.
+   */
+  resumeUploads(): void {
+    const uploads = this.uploads;
+    if (uploads === undefined || this.running) return;
+    this.running = true;
+    void uploads.queue
+      .run({
+        api: (path, init) => apiFetch(this.config, path, init),
+        put: uploads.put,
+        open: uploads.open,
+        now: () => Date.now(),
+      })
+      .finally(() => {
+        this.running = false;
+      });
+  }
 
   /* --- Real: GET /api/me/episodes -------------------------------- */
 
@@ -298,7 +343,19 @@ export class HttpCollectorApi implements CollectorApi {
     const rows = Array.isArray(body.episodes) ? (body.episodes as WireEpisode[]) : [];
     const fromServer = this.mapEpisodes(rows);
     const known = new Set(fromServer.map((e) => e.episodeId));
-    return [...fromServer, ...local.filter((e) => !known.has(e.episodeId))];
+    const merged = [...fromServer, ...local.filter((e) => !known.has(e.episodeId))];
+    return merged.map((episode) => {
+      const queued = this.uploads?.queue.find(episode.episodeId);
+      if (queued === undefined) return episode;
+      return {
+        ...episode,
+        delivery: {
+          sentBytes: queued.bytesSent,
+          totalBytes: queued.totalBytes,
+          interrupted: queued.state === 'failed',
+        },
+      };
+    });
   }
 
   private mapEpisodes(rows: WireEpisode[]): EpisodeUpload[] {
@@ -399,7 +456,17 @@ export class HttpCollectorApi implements CollectorApi {
    * whose device transfer is still a mock. `src/upload/` is the worker that
    * does the delivery once they do.
    */
-  confirmUpload(episodeId: string): Promise<EpisodeUpload> {
-    return this.fallback.confirmUpload(episodeId);
+  async confirmUpload(episodeId: string): Promise<EpisodeUpload> {
+    // The mock still owns the gate — one confirmation per episode, and only
+    // from `pending_upload`. It throws before anything is queued if the
+    // confirmation has already been spent.
+    const episode = await this.fallback.confirmUpload(episodeId);
+    // Nothing is enqueued here. A delivery needs the ingest `EpisodeRecord` and
+    // the files themselves, and both arrive from the device offload step that
+    // does not exist yet (`src/device/transfer.ts` is a mock). When one is on
+    // the queue for this episode, the tap starts it; when there is not, the
+    // Uploads screen says there is no file on this phone to send.
+    this.resumeUploads();
+    return episode;
   }
 }

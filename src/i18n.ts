@@ -203,7 +203,6 @@ const vi = {
     'Đang tải lên trong nền. Bạn không cần chờ ở màn hình này — cứ tắt màn hình và làm việc khác.',
   'uploads.progress': 'Đã gửi',
   'uploads.interrupted': 'Lần gửi trước bị gián đoạn. Phần đã gửi được giữ lại.',
-  'uploads.resume': 'Tiếp tục tải lên',
   'uploads.noFile': 'Chưa có tệp trên máy để gửi. Lấy dữ liệu từ thiết bị trước.',
 
   'state.pending_upload': 'Chờ tải lên',
@@ -415,7 +414,6 @@ const en: Record<MessageKey, string> = {
     'Uploading in the background. You do not need to wait here — turn the screen off and get on with your work.',
   'uploads.progress': 'Sent',
   'uploads.interrupted': 'The last attempt was interrupted. The part already sent is kept.',
-  'uploads.resume': 'Resume upload',
   'uploads.noFile': 'There is no file on this phone to send yet. Pull the data off the device first.',
 
   'state.pending_upload': 'Pending upload',

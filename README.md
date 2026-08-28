@@ -194,9 +194,24 @@ Every one of these is marked `ponytail:` at the place it bites:
 - State persists to a file, not to a database (`src/api/persist.ts`). The whole
   store is rewritten on every tap, which is right for one collector's profile
   and five episodes and wrong the day the Kotlin foreground service is a second
-  writer — that is when `expo-sqlite` earns its schema. There is still no
-  background upload worker, so an episode that comes back `uploading` after a
-  restart is telling the truth: no byte has moved.
+  writer — that is when `expo-sqlite` earns its schema. The upload queue now
+  has its own file beside it (`src/upload/expo.ts`), because a state file thrown
+  away for being unparseable must not take a half-delivered episode's id with
+  it.
+- **The upload worker has no producer.** `src/upload/` registers a delivery,
+  PUTs each part at its presigned url, completes, and resumes — a part the
+  server already holds is never offered again, and the queue survives a kill.
+  Nothing puts anything on that queue: a delivery needs the ingest
+  `EpisodeRecord` and the files themselves, and both come from the device
+  offload step that is still `MockDeviceTransfer`. An episode confirmed for
+  upload with no delivery queued now says so on the Uploads screen instead of
+  spinning for ever. `test/upload.test.ts` drives the worker over real HTTP
+  against a stub implementing the server's wire contract; **no platform server
+  was reachable**, so those numbers measure the client and nothing else.
+- The bytes go out as a `Blob` from `File.slice`, which is unverified on a
+  device — nothing here can run a real upload yet. If React Native's fetch
+  copies rather than streams it, `File.createUploadTask` or the foreground
+  service is the replacement (`src/upload/expo.ts` says so at the line).
 - Hand-rolled navigation stack (`src/nav.tsx`). `@react-navigation` needs
   `react-native-screens`, which Expo Go does bundle, so the swap is no longer
   blocked — it is simply not done. The `Route` union and the

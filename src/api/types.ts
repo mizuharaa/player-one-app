@@ -136,6 +136,18 @@ export interface EpisodeUpload {
   stateText?: LocalisedText;
   /** APP-27: a failed review names its reason, in the collector's language. */
   rejectReason?: string;
+  /**
+   * How far this phone has got sending the episode, when a delivery for it is
+   * on the upload queue. Absent means no delivery is queued — which is what an
+   * episode `uploading` with nothing to send looks like, and the screen says so
+   * rather than spinning for ever.
+   */
+  delivery?: {
+    sentBytes: number;
+    totalBytes: number;
+    /** The last attempt stopped. The bytes already sent are still the server's. */
+    interrupted: boolean;
+  };
 }
 
 export interface IncomeEntry {
