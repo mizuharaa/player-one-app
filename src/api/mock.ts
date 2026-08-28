@@ -32,8 +32,30 @@ export class ApiError extends Error {
   }
 }
 
-let seq = 0;
-const id = (prefix: string): string => `${prefix}-${(++seq).toString().padStart(4, '0')}`;
+/**
+ * Everything the mock holds, in the shape it is written to disk.
+ *
+ * NFR-03/NFR-04: a claim, a session and an upload state must survive the app
+ * being killed. This is the whole store, so persisting it persists all three.
+ *
+ * ponytail: no schema version and no migration path. There is nothing to
+ * migrate from — no server, no shipped build, and a shape that changes with
+ * `CollectorApi` rather than independently of it. `src/api/persist.ts` throws a
+ * file it cannot parse away and starts fresh, which is the correct answer for a
+ * scaffold and the wrong one the day real collector data lives here. Add a
+ * version field then, not now.
+ */
+export interface MockState {
+  me: CollectorProfile | null;
+  claims: Claim[];
+  devices: BoundDevice[];
+  sessions: CollectionSession[];
+  episodes: EpisodeUpload[];
+  tasks: Task[];
+  income: IncomeEntry[];
+  /** The id counter. Restored too, or a relaunch re-issues `col-0001`. */
+  seq: number;
+}
 
 export class MockCollectorApi implements CollectorApi {
   private me: CollectorProfile | null = null;
@@ -43,8 +65,31 @@ export class MockCollectorApi implements CollectorApi {
   private episodeRows: EpisodeUpload[];
   private taskRows: Task[];
   private incomeRows: IncomeEntry[];
+  /** Was a module-level counter, which two instances shared and no restart restored. */
+  private seq = 0;
 
-  constructor() {
+  /**
+   * @param restored a previous `snapshot()`, read back from disk. Adopted whole;
+   *   the seed below is for a first launch only.
+   * @param onChange called after every write, with the state to persist. The
+   *   call sits inside each mutation rather than in a screen, so no future
+   *   caller can forget it — which is what NFR-03 asks for.
+   */
+  constructor(
+    restored?: MockState,
+    private readonly onChange?: (state: MockState) => void,
+  ) {
+    if (restored !== undefined) {
+      this.me = restored.me;
+      this.claims = restored.claims;
+      this.devices = restored.devices;
+      this.sessionRows = restored.sessions;
+      this.episodeRows = restored.episodes;
+      this.taskRows = restored.tasks;
+      this.incomeRows = restored.income;
+      this.seq = restored.seq;
+      return;
+    }
     this.taskRows = [
       {
         id: 'task-cook',
@@ -121,6 +166,32 @@ export class MockCollectorApi implements CollectorApi {
     ];
   }
 
+  private id(prefix: string): string {
+    return `${prefix}-${(++this.seq).toString().padStart(4, '0')}`;
+  }
+
+  /**
+   * The whole store, for whoever persists it. Live objects, not copies: the one
+   * caller stringifies it immediately, and a restart therefore goes through JSON
+   * exactly as `test/persistence.test.ts` does.
+   */
+  snapshot(): MockState {
+    return {
+      me: this.me,
+      claims: this.claims,
+      devices: this.devices,
+      sessions: this.sessionRows,
+      episodes: this.episodeRows,
+      tasks: this.taskRows,
+      income: this.incomeRows,
+      seq: this.seq,
+    };
+  }
+
+  private persist(): void {
+    this.onChange?.(this.snapshot());
+  }
+
   private mustProfile(): CollectorProfile {
     if (this.me === null) throw new ApiError('not_registered');
     return this.me;
@@ -141,7 +212,8 @@ export class MockCollectorApi implements CollectorApi {
 
   async register(name: string, phone: string): Promise<CollectorProfile> {
     if (name.trim() === '' || phone.trim() === '') throw new ApiError('missing_fields');
-    this.me = { id: id('col'), name, phone, agreements: [], trainingDone: false, examPassed: false };
+    this.me = { id: this.id('col'), name, phone, agreements: [], trainingDone: false, examPassed: false };
+    this.persist();
     return { ...this.me };
   }
 
@@ -157,12 +229,14 @@ export class MockCollectorApi implements CollectorApi {
     }
     const acceptedAt = new Date().toISOString();
     me.agreements = acceptances.map((a) => ({ ...a, acceptedAt }));
+    this.persist();
     return { ...me, agreements: me.agreements.map((a) => ({ ...a })) };
   }
 
   async completeTraining(): Promise<CollectorProfile> {
     const me = this.mustProfile();
     me.trainingDone = true;
+    this.persist();
     return { ...me };
   }
 
@@ -172,6 +246,7 @@ export class MockCollectorApi implements CollectorApi {
     // PaXini's real questions and grading replace this with the content drop.
     const passed = answers.length === EXAM_QUESTION_COUNT && answers.every(Boolean);
     if (passed) me.examPassed = true;
+    this.persist();
     return { passed };
   }
 
@@ -218,8 +293,9 @@ export class MockCollectorApi implements CollectorApi {
     if (task.claimants >= task.maxClaimants) throw new ApiError('task_at_capacity');
     if (this.claims.some((c) => c.taskId === taskId)) throw new ApiError('already_claimed');
     task.claimants += 1;
-    const claim: Claim = { id: id('claim'), taskId, claimedAt: new Date().toISOString() };
+    const claim: Claim = { id: this.id('claim'), taskId, claimedAt: new Date().toISOString() };
     this.claims.push(claim);
+    this.persist();
     return { ...claim };
   }
 
@@ -238,6 +314,7 @@ export class MockCollectorApi implements CollectorApi {
     if (this.devices.some((d) => d.serial === trimmed)) throw new ApiError('already_bound');
     const device: BoundDevice = { serial: trimmed, boundAt: new Date().toISOString() };
     this.devices.push(device);
+    this.persist();
     return { ...device };
   }
 
@@ -248,11 +325,12 @@ export class MockCollectorApi implements CollectorApi {
     if (!this.claims.some((c) => c.taskId === input.taskId)) throw new ApiError('task_not_claimed');
     const session: CollectionSession = {
       ...input,
-      id: id('ses'),
+      id: this.id('ses'),
       collectorId: me.id,
       createdAt: new Date().toISOString(),
     };
     this.sessionRows.push(session);
+    this.persist();
     return { ...session };
   }
 
@@ -275,6 +353,10 @@ export class MockCollectorApi implements CollectorApi {
     // the one class that must not have one. Removed. The transition out of
     // `uploading` belongs to the transfer worker that does not exist yet.
     episode.state = 'uploading';
+    // NFR-04: written before this call returns, so the state a collector just
+    // authorised survives the app being killed a moment later. It stays
+    // `uploading` across that restart, because nothing has moved the bytes.
+    this.persist();
     return { ...episode };
   }
 

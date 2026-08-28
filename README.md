@@ -48,9 +48,10 @@ screen is reachable from there, running against the in-memory mock. `r` in the
 terminal reloads the phone, `j` opens the debugger, `Ctrl-C` stops the server.
 
 Nothing here needs a native module that Expo Go does not already carry: the
-device is mocked, so BLE and file transfer are not involved, and the only
-third-party runtime dependency is `react-native-safe-area-context`, which Expo
-Go bundles.
+device is mocked, so BLE and file transfer are not involved. The runtime
+dependencies outside React itself are `react-native-safe-area-context` and
+`expo-file-system` — the first is bundled into Expo Go, the second ships inside
+the SDK Expo Go is built against, so neither needs a native build.
 
 If the phone will not connect — guest Wi-Fi with client isolation, a VPN on
 either end, or a Windows firewall prompt that got dismissed — `npx expo start
@@ -98,15 +99,19 @@ Read that literally before quoting progress from it:
 | Screens | All thirteen exist and are reachable; the route registry is `Record<RouteName, ComponentType>`, so a missing screen is a compile error. |
 | Server | `MockCollectorApi` — in memory, one process. There is no HTTP client and no auth. |
 | Device | `MockDeviceTransport` / `MockDeviceTransfer` — no BLE, no Wi-Fi, no file transfer. See `DEVICE_DEPS.md`. |
-| Persistence | **None.** Killing the app resets registration, claims, the upload queue and income. The offline/restart-survival requirement is not met. |
+| Persistence | **One JSON file** in the document directory, written synchronously inside every mutation (`src/api/persist.ts`). Registration, agreements, the exam result, claims, bound devices, sessions and the upload queue survive a kill (NFR-03, NFR-04). Not a sync engine and not SQLite — see the ceilings below. |
 | Native project | **None checked in.** `android/` is `expo prebuild` output and is gitignored; prebuild has never been run here. Metro and Babel use Expo's defaults, so there is no config file for either. |
 | Launchable | **In Expo Go, yes** — `npm install && npx expo start`, scan the QR. See "Run it on your phone" above. **As an installable APK, not yet:** that needs `expo prebuild` plus the EgoLowBle TurboModule (`DEVICE_DEPS.md`). |
 
 The typechecker and the unit tests also run here. Those cover the mock's gates
 (APP-02, APP-05, APP-10, APP-15, APP-25), the BLE call order, the message
-catalogue, and the agreement-id contract with the server. Vitest never loads
-React Native or Expo — the tests import `src/api/` and `src/device/` only, which
-is why they stay fast and need no native runtime.
+catalogue, the agreement-id contract with the server, restart survival
+(NFR-03/04) and the pre-collection reminder's wording (PRV-02). Vitest never
+loads React Native or Expo — the tests import `src/api/`, `src/device/` and
+`src/resume.ts`, none of which reach a native module, which is why they stay
+fast and need no native runtime. The one exception reads `SessionCreate.tsx` as
+text to check where the reminder sits, because the requirement is positional and
+there is still no renderer here.
 
 ```sh
 npm install
@@ -145,22 +150,30 @@ leaves their phone).
 ### Layout
 
 ```
-src/api/       CollectorApi (the typed seam) + the mock that fills it today
+src/api/       CollectorApi (the typed seam) + the mock that fills it today,
+               and persist.ts, the file the mock is restored from
 src/device/    DeviceTransport (BLE provisioning) + DeviceTransfer (Path A)
 src/screens/   one file per screen
 src/ui.tsx     Screen, ListScreen, Card, CardLink, Choice, Button, Field, Tag, Note
 src/nav.tsx    the typed stack, and Android's hardware Back
+src/resume.ts  which screen a restored collector opens on
 src/theme.tsx  the only door design tokens come through
 src/design/    the tokens themselves, vendored from the platform repo
 src/i18n.ts    every user-facing string, Vietnamese-based
-test/          the mock's gates, the device seams, the catalogue, the contract
+test/          the mock's gates, the device seams, the catalogue, the contract,
+               restart survival, and the pre-collection reminder
 ```
 
 ### Known ceilings
 
 Every one of these is marked `ponytail:` at the place it bites:
 
-- No persistence, no restart recovery, no background upload worker (`src/App.tsx`).
+- State persists to a file, not to a database (`src/api/persist.ts`). The whole
+  store is rewritten on every tap, which is right for one collector's profile
+  and five episodes and wrong the day the Kotlin foreground service is a second
+  writer — that is when `expo-sqlite` earns its schema. There is still no
+  background upload worker, so an episode that comes back `uploading` after a
+  restart is telling the truth: no byte has moved.
 - Hand-rolled navigation stack (`src/nav.tsx`). `@react-navigation` needs
   `react-native-screens`, which Expo Go does bundle, so the swap is no longer
   blocked — it is simply not done. The `Route` union and the
@@ -168,9 +181,13 @@ Every one of these is marked `ponytail:` at the place it bites:
 - QR device binding is a fixed serial; VisionCamera needs a native build
   (`src/screens/Devices.tsx`).
 - Training and exam content is a shell. PaXini owes it.
-- No login, logout, token or restored session: the app always opens on
-  registration. An existing collector cannot sign back in, because there is no
-  auth endpoint to sign in to (`src/App.tsx`).
+- No login, logout or token. A returning collector now resumes at the first
+  onboarding step they had not finished (`src/resume.ts`) instead of always
+  opening on registration, but only because their file is still on the phone —
+  that is not authentication and it is not a session. It exists because
+  `Register` overwrites the profile, so opening a restored collector on it would
+  destroy the state that was just restored. A real sign-in needs an auth
+  endpoint that does not exist.
 - Agreements show a title and a version, not a document. There is no body,
   effective date, or server-supplied current version, so the revision path
   cannot be exercised — consent here is a mechanism, not yet informed consent

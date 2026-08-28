@@ -146,6 +146,15 @@ const vi = {
   'session.task': 'Nhiệm vụ',
   'session.device': 'Thiết bị',
   'session.scenario': 'Bối cảnh',
+  // PRV-02 / APP-20. PaXini's PRD §14.2 gives this reminder verbatim and the
+  // brief says "displayed before each session"; these two sentences are that
+  // text translated, not paraphrased, and the English below is the PRD's own
+  // wording. Changing the list of things to avoid is changing the requirement.
+  'session.privacyTitle': 'Nhắc trước khi thu thập',
+  'session.privacyAvoid':
+    'Hãy cố gắng tránh thu thập giấy tờ tùy thân, thẻ ngân hàng, mật khẩu, thông tin nhạy cảm trên màn hình, trẻ em, thông tin y tế riêng tư, địa chỉ nhà chi tiết và các nội dung khác.',
+  'session.privacySensitive':
+    'Nếu thông tin nhạy cảm không thể tránh khỏi trong nhiệm vụ thực tế, hệ thống sẽ đưa vào duyệt và xử lý ẩn thông tin sau đó.',
   'session.declare': 'Hai khai báo bắt buộc trước khi ghi hình:',
   'session.othersTitle': 'Có thể có người khác trong khung hình?',
   'session.sensitiveTitle': 'Có thể xuất hiện thông tin nhạy cảm?',
@@ -326,6 +335,11 @@ const en: Record<MessageKey, string> = {
   'session.task': 'Task',
   'session.device': 'Device',
   'session.scenario': 'Scenario',
+  'session.privacyTitle': 'Before you collect',
+  'session.privacyAvoid':
+    'Please try to avoid collecting ID cards, bank cards, passwords, screen sensitive information, children, medical privacy, detailed home addresses, and other content.',
+  'session.privacySensitive':
+    'If sensitive information inevitably appears in real tasks, the backend will enter review and subsequent desensitization processing.',
   'session.declare': 'Two declarations, required before recording:',
   'session.othersTitle': 'Might other people appear in frame?',
   'session.sensitiveTitle': 'Might sensitive information appear?',

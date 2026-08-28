@@ -152,6 +152,29 @@ export function SessionCreate() {
         )}
       </Card>
 
+      {/*
+        PRV-02 / APP-20: the pre-collection reminder, shown before each session
+        because this screen is what "before each session" means — a session is
+        bound here and nowhere else. It sits immediately above the two APP-17b
+        declarations rather than at the top of the screen, so a collector reads
+        what to avoid and then answers whether it may appear anyway.
+
+        Plain `Body` inside a `Card`, not `Note`: `Note` is a live region, for
+        the machine answering an action. This is standing text that a screen
+        reader should meet in reading order, not have interrupted at it.
+      */}
+      <Card>
+        <Title>{tt('session.privacyTitle')}</Title>
+        {/*
+          Neither sentence is `muted`. Every other screen's supporting line is,
+          and `mutedForeground` is the right colour for a line a collector may
+          skip. This is the one PaXini's PRD requires to be displayed, so it is
+          drawn at the same contrast as the questions it governs.
+        */}
+        <Body>{tt('session.privacyAvoid')}</Body>
+        <Body>{tt('session.privacySensitive')}</Body>
+      </Card>
+
       <Card>
         <Title>{tt('session.declare')}</Title>
         <YesNo question={tt('session.othersTitle')} value={others} onChange={setOthers} />
