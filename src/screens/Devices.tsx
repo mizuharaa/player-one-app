@@ -34,8 +34,18 @@ export function Devices() {
   // yet", which is a business answer to a question nobody could answer, and it
   // is the answer that sends a collector off to bind a device they already
   // have. Unknown state offers a retry instead (same rule as TaskDetail).
+  //
+  // Which camera belongs to which collector is the platform's record, not this
+  // phone's, so a build with no server shows neither a list nor the form that
+  // would write to one: binding here would record the pairing nowhere.
   if (devices.isError) {
-    return <LoadFailed title={tt('devices.title')} onRetry={() => void devices.refetch()} />;
+    return (
+      <LoadFailed
+        title={tt('devices.title')}
+        error={devices.error}
+        onRetry={() => void devices.refetch()}
+      />
+    );
   }
   if (devices.data === undefined) return <Loading title={tt('devices.title')} />;
 

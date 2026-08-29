@@ -42,6 +42,10 @@ const ERRORS: Record<string, MessageKey> = {
   // leave it, and anything it did not convert still lands on the generic
   // sentence rather than on screen as an identifier.
   network: 'common.loadFailed',
+  // src/api/local.ts: a method with no route behind it. It reaches a screen as
+  // a rejected query, where `LoadFailed` says it without offering a retry, and
+  // as a rejected mutation, where this sentence is what the collector reads.
+  no_server: 'common.noServer',
   unauthorized: 'signin.expired',
   bad_code: 'signin.badCode',
   rate_limited: 'common.rateLimited',

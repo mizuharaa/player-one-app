@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useApi } from '../api/context.tsx';
+import { isNoServer } from '../api/local.ts';
 import { useT } from '../locale.tsx';
 import { useTheme } from '../theme.tsx';
 import { Body, Button, Card, Choice, LoadFailed, Loading, Note, Row, Screen, Title } from '../ui.tsx';
@@ -88,11 +89,21 @@ export function SessionCreate() {
   // and no devices read becomes "Cần liên kết thiết bị trước" — telling a
   // collector to redo work they have already done. All three reads gate the
   // form, so all three are checked, and none of them answers while unknown.
-  const failed = [claims, tasks, devices].find((q) => q.isError);
+  //
+  // A build with no server is the exception, and it is why this screen does not
+  // simply hand every failure to `LoadFailed`: the claimed task and the bound
+  // device come from the platform and cannot be listed, but the pre-collection
+  // reminder (PRV-02) and the two declarations (APP-17b) are this screen's own
+  // and are the part a collector must be able to read. So the form stays,
+  // stating why the two pickers are empty, and the button stays disabled
+  // because there is still nothing to bind a session to.
+  const noServer = [claims, tasks, devices].some((q) => isNoServer(q.error));
+  const failed = [claims, tasks, devices].find((q) => q.isError && !isNoServer(q.error));
   if (failed !== undefined) {
     return (
       <LoadFailed
         title={tt('session.title')}
+        error={failed.error}
         onRetry={() => {
           void claims.refetch();
           void tasks.refetch();
@@ -101,7 +112,10 @@ export function SessionCreate() {
       />
     );
   }
-  if (claims.data === undefined || tasks.data === undefined || devices.data === undefined) {
+  if (
+    !noServer &&
+    (claims.data === undefined || tasks.data === undefined || devices.data === undefined)
+  ) {
     return <Loading title={tt('session.title')} />;
   }
 
@@ -132,7 +146,17 @@ export function SessionCreate() {
 
       <Card>
         <Title>{tt('session.task')}</Title>
-        {claimedTasks.length === 0 ? <Note text={tt('session.needClaim')} /> : null}
+        {/*
+          "Claim a task first" is an instruction, and an instruction is a claim
+          about the collector's own record. With no server nobody knows what
+          they have claimed, so the screen says that instead of sending them to
+          a task hall that is equally empty.
+        */}
+        {noServer ? (
+          <Note text={tt('common.noServer')} />
+        ) : claimedTasks.length === 0 ? (
+          <Note text={tt('session.needClaim')} />
+        ) : null}
         {pick(claimedTasks, (t) => t.id, (t) => t.title, tt('session.task'), taskId, setTaskId)}
         {task !== undefined ? (
           <Row label={tt('session.scenario')} value={tt(`scenario.${task.scenario}`)} />
@@ -141,7 +165,11 @@ export function SessionCreate() {
 
       <Card>
         <Title>{tt('session.device')}</Title>
-        {(devices.data ?? []).length === 0 ? <Note text={tt('session.needDevice')} /> : null}
+        {noServer ? (
+          <Note text={tt('common.noServer')} />
+        ) : (devices.data ?? []).length === 0 ? (
+          <Note text={tt('session.needDevice')} />
+        ) : null}
         {pick(
           devices.data ?? [],
           (d) => d.serial,

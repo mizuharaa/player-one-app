@@ -15,9 +15,18 @@ export function TaskHall() {
 
   // A failed read used to draw the same empty hall as a hall with no tasks in
   // it, and the collector's reading of an empty hall is "there is no work
-  // today" — they close the app. It is a different screen now.
+  // today" — they close the app. It is a different screen now. So is a build
+  // with no server: the tasks, their prices and their progress are the
+  // platform's to state, and until it can be asked, the hall says that rather
+  // than showing work that does not exist.
   if (tasks.isError) {
-    return <LoadFailed title={tt('hall.title')} onRetry={() => void tasks.refetch()} />;
+    return (
+      <LoadFailed
+        title={tt('hall.title')}
+        error={tasks.error}
+        onRetry={() => void tasks.refetch()}
+      />
+    );
   }
 
   return (

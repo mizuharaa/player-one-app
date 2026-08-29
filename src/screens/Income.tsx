@@ -43,10 +43,20 @@ export function Income() {
   const theme = useTheme();
   const income = useQuery({ queryKey: ['income'], queryFn: () => api.income() });
 
-  // This is the screen where an empty list is worst: "no income yet" is a
-  // statement about the collector's pay, and a failed read used to make it.
+  // This is the screen where a wrong answer is worst: every sentence here is
+  // about the collector's pay. "No income yet" is one such statement and a
+  // failed read used to make it; a figure with no server behind it is the
+  // other, and this screen used to make that one too — minutes and an amount,
+  // seeded, in the same layout as a real settlement. Both are gone. With no
+  // server the screen says there is no server.
   if (income.isError) {
-    return <LoadFailed title={tt('income.title')} onRetry={() => void income.refetch()} />;
+    return (
+      <LoadFailed
+        title={tt('income.title')}
+        error={income.error}
+        onRetry={() => void income.refetch()}
+      />
+    );
   }
 
   return (

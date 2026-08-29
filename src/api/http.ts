@@ -1,3 +1,4 @@
+import { isNoServer } from './local.ts';
 import { ApiError } from './mock.ts';
 import type { UploadQueue } from '../upload/queue.ts';
 import type { PartBody, PartSource } from '../upload/worker.ts';
@@ -36,11 +37,17 @@ import type {
  *
  * There is no route for registration, the six agreements, training, the exam,
  * the task hall, claiming, device binding or session creation. Thirteen of the
- * sixteen methods below therefore delegate to `fallback`, which is the same
- * `MockCollectorApi` the app ran on before. That delegation is listed method by
- * method rather than hidden behind a proxy, so "which of these is real" is
- * answered by reading the file, and moving one to the server is deleting one
- * line.
+ * sixteen methods below therefore delegate to `fallback`. That delegation is
+ * listed method by method rather than hidden behind a proxy, so "which of these
+ * is real" is answered by reading the file, and moving one to the server is
+ * deleting one line.
+ *
+ * What `fallback` is decides what a collector sees for those thirteen, and by
+ * default it is `src/api/local.ts`: the five onboarding methods answered from
+ * this phone's own store, and the eleven that describe the platform's records
+ * refusing with `no_server` so the screen says the app is not connected rather
+ * than showing invented work at invented prices. `MockCollectorApi` takes its
+ * place under `EXPO_PUBLIC_MOCK_DATA=1`, for exercising a layout.
  *
  * ## The collector id
  *
@@ -283,8 +290,8 @@ export class HttpCollectorApi implements CollectorApi {
   constructor(
     private readonly config: HttpConfig,
     /**
-     * Everything the server has no route for, which today is most of it. The
-     * mock the app already ran on, unchanged — see the file comment.
+     * Everything the server has no route for, which today is most of it.
+     * `localOnly` by default, the mock when asked for — see the file comment.
      */
     private readonly fallback: CollectorApi,
     private readonly uploads?: UploadDriver,
@@ -338,7 +345,13 @@ export class HttpCollectorApi implements CollectorApi {
   async episodes(): Promise<EpisodeUpload[]> {
     const [body, local] = await Promise.all([
       getJson<{ episodes?: unknown }>(this.config, '/api/me/episodes'),
-      this.fallback.episodes(),
+      // A build with no seeded data has no local list to merge — the device
+      // offload that would produce one is still a mock — and that must not take
+      // the server's real list down with it. The server's answer stands alone.
+      this.fallback.episodes().catch((error: unknown) => {
+        if (isNoServer(error)) return [];
+        throw error;
+      }),
     ]);
     const rows = Array.isArray(body.episodes) ? (body.episodes as WireEpisode[]) : [];
     const fromServer = this.mapEpisodes(rows);

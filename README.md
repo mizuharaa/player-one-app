@@ -44,8 +44,28 @@ npx expo start
 
 Scan the QR code the terminal prints — with Expo Go's own scanner on Android,
 with the Camera app on iOS. The app opens on the registration screen and every
-screen is reachable from there, running against the in-memory mock. `r` in the
-terminal reloads the phone, `j` opens the debugger, `Ctrl-C` stops the server.
+screen is reachable from there. `r` in the terminal reloads the phone, `j`
+opens the debugger, `Ctrl-C` stops the server.
+
+**What it shows with no server.** Registration, the six agreements, the
+training and the exam work: a collector types and taps those, and this phone
+stores them (`src/api/persist.ts`), so showing them back is showing the
+collector their own data. The task hall, my tasks, devices, uploads and income
+say plainly that the app is not connected to a server yet — that is what they
+know, and it is not the same statement as "you have nothing". Nothing on any
+screen is a number or a record the app did not get from a server.
+
+### See the layouts holding data
+
+```sh
+EXPO_PUBLIC_MOCK_DATA=1 npx expo start
+```
+
+Puts `MockCollectorApi`'s seed back: three tasks, five episodes across the six
+states, three income rows. Invented, all of it, which is why it is opt-in and
+was not always — a seeded amount on the income screen is a figure a person can
+believe. Use it to look at a layout that has no route behind it yet; do not use
+it to judge whether anything works.
 
 Nothing here needs a native module that Expo Go does not already carry: the
 device is mocked, so BLE and file transfer are not involved. The runtime
@@ -77,9 +97,9 @@ cached money figure with it, and returns to sign-in; a shared phone is normal in
 this pilot, so the sign-out button on the home screen does the same thing on
 purpose.
 
-**Which screens change:** Income and Uploads read the server. Everything else is
-still the mock — see "Onboarding is still local" under the ceilings. Unset the
-variable and the app is exactly what it was.
+**Which screens change:** Income and Uploads read the server. Everything else
+has no route yet, so those screens say the app is not connected rather than
+inventing an answer — see "Onboarding is still local" under the ceilings.
 
 ### The version delta, on purpose
 
@@ -120,7 +140,7 @@ Read that literally before quoting progress from it:
 | | State |
 |---|---|
 | Screens | All thirteen exist and are reachable; the route registry is `Record<RouteName, ComponentType>`, so a missing screen is a compile error. |
-| Server | **Two builds, one environment variable.** Unset `EXPO_PUBLIC_API_URL` (the default) is `MockCollectorApi`, in memory, one process, no network. Set it and the app signs in for real and reads income and episode states from the platform API; everything else still comes from the mock, because the server has no route for it. See "Talk to the real server" below. |
+| Server | **Two builds, one environment variable.** Unset `EXPO_PUBLIC_API_URL` (the default) is no server: onboarding is answered from this phone's own store and every screen whose content belongs to the platform says the app is not connected (`src/api/local.ts`). Set it and the app signs in for real and reads income and episode states from the platform API; the rest still has no route and still says so. `EXPO_PUBLIC_MOCK_DATA=1` puts the mock's seeded rows back on either build. See "Talk to the real server" below. |
 | Device | `MockDeviceTransport` / `MockDeviceTransfer` — no BLE, no Wi-Fi, no file transfer. See `DEVICE_DEPS.md`. |
 | Persistence | **One JSON file** in the document directory, written synchronously inside every mutation (`src/api/persist.ts`). Registration, agreements, the exam result, claims, bound devices, sessions and the upload queue survive a kill (NFR-03, NFR-04). Not a sync engine and not SQLite — see the ceilings below. |
 | Native project | **None checked in.** `android/` is `expo prebuild` output and is gitignored; prebuild has never been run here. Metro and Babel use Expo's defaults, so there is no config file for either. |
@@ -165,7 +185,14 @@ Three of them are hard, and each is pinned by a test rather than a convention:
    rounded by the single rounding site in the platform. No input type here
    carries either.
 
-A fourth is structural: **uploads start only from an explicit tap.**
+A fourth: **the app never shows a number or a record it did not get from the
+server.** Seeded rows are opt-in behind `EXPO_PUBLIC_MOCK_DATA`; without them
+`src/api/local.ts` answers the collector's own onboarding record and refuses
+the rest with `no_server`, and the screens tell four states apart — loading,
+not connected, genuinely empty, failed to read. `test/no-server.test.ts` names
+the eleven methods that must refuse.
+
+A fifth is structural: **uploads start only from an explicit tap.**
 `confirmUpload` is the only transition out of `pending_upload` — no effect, no
 timer, no network-state listener (APP-25, PRV-03: the collector decides what
 leaves their phone).
@@ -173,8 +200,9 @@ leaves their phone).
 ### Layout
 
 ```
-src/api/       CollectorApi (the typed seam) + the mock that fills it today,
-               and persist.ts, the file the mock is restored from
+src/api/       CollectorApi (the typed seam), the HTTP client, the mock behind
+               EXPO_PUBLIC_MOCK_DATA, local.ts (which half of the seam this
+               phone may answer at all), and persist.ts, the file it restores from
 src/device/    DeviceTransport (BLE provisioning) + DeviceTransfer (Path A)
 src/screens/   one file per screen
 src/ui.tsx     Screen, ListScreen, Card, CardLink, Choice, Button, Field, Tag, Note
@@ -220,13 +248,15 @@ Every one of these is marked `ponytail:` at the place it bites:
   (`src/screens/Devices.tsx`).
 - Training and exam content is a shell. PaXini owes it.
 - **Onboarding is still local, in both builds.** Registration, the six
-  agreements, training, the exam, the task hall, claiming, device binding and
-  session creation have no server route on any branch, so they still run against
-  the mock even when the app is signed in. A signed-in collector is therefore
-  asked to register, which reads oddly and is honest: the token proves who they
-  are, and nothing on the server yet knows what they have agreed to. Each of
-  those is one delegating line in `src/api/http.ts`, to be deleted as its route
-  lands.
+  agreements, training and the exam have no server route on any branch, so they
+  are answered from this phone's store even when the app is signed in. A
+  signed-in collector is therefore asked to register; the register screen now
+  says why rather than leaving them to guess — the token proves who they are,
+  and nothing on the server yet knows their name or what they agreed to. The
+  task hall, claiming, device binding and session creation have no route
+  either, and those describe the platform's records rather than the phone's, so
+  they say the app is not connected instead of answering. Each is one
+  delegating line in `src/api/http.ts`, to be deleted as its route lands.
 - Sign-in exists and is real (`src/screens/SignIn.tsx`, `src/auth.ts`), but only
   in the server build. The mock build has no sign-in screen and no token, and a
   returning collector still resumes at the first onboarding step they had not

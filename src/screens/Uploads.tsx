@@ -54,8 +54,17 @@ export function Uploads() {
   // An empty upload queue and a failed read of it are not the same thing: the
   // first says the phone is clear, the second says nothing is known, and a
   // collector who believes the first stops looking for footage they recorded.
+  // And a build with no server is a third thing again: the episode list and
+  // every state on it come from the platform, so there is nothing to show and
+  // nothing to retry until there is one to ask.
   if (episodes.isError) {
-    return <LoadFailed title={tt('uploads.title')} onRetry={() => void episodes.refetch()} />;
+    return (
+      <LoadFailed
+        title={tt('uploads.title')}
+        error={episodes.error}
+        onRetry={() => void episodes.refetch()}
+      />
+    );
   }
 
   return (

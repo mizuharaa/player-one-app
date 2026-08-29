@@ -24,6 +24,7 @@ export function MyTasks() {
     return (
       <LoadFailed
         title={tt('mine.title')}
+        error={failed.error}
         onRetry={() => {
           void claims.refetch();
           void tasks.refetch();

@@ -46,6 +46,7 @@ export function TaskDetail() {
     return (
       <LoadFailed
         title={tt('detail.title')}
+        error={failed.error}
         onRetry={() => {
           void task.refetch();
           void profile.refetch();

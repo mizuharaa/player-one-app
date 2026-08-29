@@ -2,8 +2,9 @@ import { useCallback, useEffect, useRef, useState, type ComponentType } from 're
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { CollectorApi } from './api/types.ts';
-import { API_BASE_URL, usingServer } from './api/config.ts';
+import { API_BASE_URL, usingMockData, usingServer } from './api/config.ts';
 import { HttpCollectorApi } from './api/http.ts';
+import { isNoServer, localOnly } from './api/local.ts';
 import { loadApi } from './api/persist.ts';
 import { clearSession, readSession, writeSession, type Session } from './auth.ts';
 import { resume } from './resume.ts';
@@ -56,7 +57,17 @@ function Current() {
   return <Screen />;
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // "This build has no server" is an answer, not a lost packet. Retrying it
+      // three times over seven seconds only delays the sentence that says so,
+      // and leaves the screen on "Đang tải…" while it does. Everything else
+      // keeps react-query's default three attempts.
+      retry: (count, error) => !isNoServer(error) && count < 3,
+    },
+  },
+});
 
 /**
  * The app's state now outlives the process: `src/api/persist.ts` gives the mock
@@ -129,10 +140,14 @@ export function App() {
 
   useEffect(() => {
     void (async () => {
-      const mock = await loadApi();
-      const start = resume(await mock.profile());
+      const store = await loadApi();
+      const start = resume(await store.profile());
+      // What the app is allowed to show when nothing can be asked. The mock's
+      // seeded tasks, episodes and income are opt-in now; the default keeps the
+      // collector's own onboarding record and refuses to invent the rest.
+      const local = usingMockData() ? store : localOnly(store);
       if (!usingServer() || API_BASE_URL === null) {
-        setBoot({ api: mock, start });
+        setBoot({ api: local, start });
         return;
       }
       const restored = await readSession();
@@ -146,7 +161,7 @@ export function App() {
           // no refresh to try: it wipes and returns to sign-in.
           onUnauthorized: () => signOut(),
         },
-        mock,
+        local,
         { queue: await loadQueue(), open: expoSource, put: presignedPut },
       );
       setBoot({ api, start });

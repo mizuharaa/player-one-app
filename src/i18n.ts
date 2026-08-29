@@ -30,6 +30,11 @@ const vi = {
   'common.needRegister': 'Cần tạo tài khoản trước khi tiếp tục.',
   'common.unknownState': 'Trạng thái chưa xác định.',
   'common.rateLimited': 'Bạn đã thử quá nhiều lần. Đợi một lát rồi thử lại.',
+  // Three different sentences, never mixed up: this one is "chưa có máy chủ",
+  // `common.loadFailed` is "hỏi rồi nhưng không nhận được trả lời", and each
+  // screen's own `*.empty` is "máy chủ trả lời là không có gì".
+  'common.noServer':
+    'Ứng dụng chưa kết nối với máy chủ. Nội dung của màn hình này do máy chủ cung cấp, nên hiện chưa có gì để hiển thị. Đây không có nghĩa là bạn chưa có dữ liệu.',
 
   // The sign-in flow. It exists only when this build talks to a server
   // (`src/api/config.ts`); against the mock the app still opens on registration.
@@ -58,6 +63,9 @@ const vi = {
   'register.phone': 'Số điện thoại',
   'register.submit': 'Tạo tài khoản',
   'register.missing': 'Điền đầy đủ họ tên và số điện thoại.',
+  // Why a collector who has just signed in is asked to register anyway.
+  'register.signedIn':
+    'Bạn đã đăng nhập. Máy chủ mới chỉ xác minh số điện thoại; máy chủ chưa giữ họ tên, các thỏa thuận hay kết quả kiểm tra của bạn. Những phần đó nằm trên máy này, nên vẫn cần điền ở đây.',
 
   'agreements.title': 'Sáu thỏa thuận',
   'agreements.intro':
@@ -245,6 +253,8 @@ const en: Record<MessageKey, string> = {
   'common.needRegister': 'Create an account before continuing.',
   'common.unknownState': 'Unknown state.',
   'common.rateLimited': 'Too many attempts. Wait a moment, then try again.',
+  'common.noServer':
+    'The app is not connected to a server yet. What belongs on this screen comes from the server, so there is nothing to show here. It does not mean you have nothing.',
 
   'signin.title': 'Sign in',
   'signin.intro':
@@ -271,6 +281,8 @@ const en: Record<MessageKey, string> = {
   'register.phone': 'Phone number',
   'register.submit': 'Create account',
   'register.missing': 'Enter both your full name and phone number.',
+  'register.signedIn':
+    'You are signed in. The server has only verified your phone number; it does not hold your name, your agreements or your exam result. Those live on this phone, so they are still filled in here.',
 
   'agreements.title': 'The six agreements',
   'agreements.intro':

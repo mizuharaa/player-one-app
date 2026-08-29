@@ -9,6 +9,7 @@ import {
   type TextInputProps,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { isNoServer } from './api/local.ts';
 import { useNav } from './nav.tsx';
 import { useT } from './locale.tsx';
 import { useTheme } from './theme.tsx';
@@ -143,21 +144,40 @@ export function ListScreen<T>({
 }
 
 /**
- * A read that failed, and the way out of it.
+ * A read that did not produce data, and the way out of it.
  *
  * The shape is `TaskDetail`'s, which was the only screen that had one: a
  * sentence saying the load failed, and a button that tries again. Every other
  * screen fell through to `data ?? []` and drew an empty list, so "the network
  * is down" and "you have claimed nothing" looked identical — and the empty one
  * is the answer a collector believes. Loading, failed and genuinely empty are
- * three different screens now.
+ * three different screens now, and this is where the fourth is told from them:
+ * a screen whose content belongs to a server this build has none of
+ * (`src/api/local.ts`). That one says so and offers no retry, because there is
+ * nothing to try again — the sentence would not change.
  *
- * `Note` carries the sentence, so the failure is announced to a screen reader
- * (its live region) and is not a colour; `Button` carries the retry, so the
- * tap target is the same 48dp as everywhere else.
+ * `Note` carries the sentence, so it is announced to a screen reader (its live
+ * region) and is not a colour; `Button` carries the retry, so the tap target is
+ * the same 48dp as everywhere else.
  */
-export function LoadFailed({ title, onRetry }: { title: string; onRetry: () => void }) {
+export function LoadFailed({
+  title,
+  error,
+  onRetry,
+}: {
+  title: string;
+  /** The rejection, so "no server" is not shown as "check your connection". */
+  error: unknown;
+  onRetry: () => void;
+}) {
   const tt = useT();
+  if (isNoServer(error)) {
+    return (
+      <Screen title={title}>
+        <Note text={tt('common.noServer')} />
+      </Screen>
+    );
+  }
   return (
     <Screen title={title}>
       <Note text={tt('common.loadFailed')} />
