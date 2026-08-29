@@ -35,8 +35,8 @@ export function Home() {
     // once, to bind, and has no reason to open again when the camera later
     // will not reach the network. The gate is the same one Devices applies:
     // nothing to configure until something is bound. Unknown counts as none,
-    // which is the safe direction, and `home.gateDevice` above says why the
-    // button is grey.
+    // which is the safe direction — and unknown gets its own sentence above,
+    // because a grey button with no sentence is state carried by styling alone.
     { key: 'devices.provision', route: { name: 'provisioning' }, disabled: noDevice },
   ];
 
@@ -45,7 +45,16 @@ export function Home() {
       {profile.data !== undefined && profile.data !== null && !profile.data.examPassed ? (
         <Note text={tt('home.gateExam')} />
       ) : null}
-      {devices.data !== undefined && devices.data.length === 0 ? (
+      {/*
+        Three answers, three sentences. The device read said "none" — the gate.
+        It failed, or nobody could answer it — then the list is unknown, the
+        Wi-Fi button below is grey for that reason, and saying so is the only
+        thing keeping that state off styling alone. It is in flight — nothing
+        yet, because the note would be replaced a moment later.
+      */}
+      {devices.isError ? (
+        <Note text={tt('home.gateDeviceUnknown')} />
+      ) : devices.data !== undefined && devices.data.length === 0 ? (
         <Note text={tt('home.gateDevice')} />
       ) : null}
       {links.map((l) => (

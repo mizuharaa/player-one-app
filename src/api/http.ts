@@ -1,4 +1,4 @@
-import { isNoServer } from './local.ts';
+import { NO_ROUTE, isNoServer } from './local.ts';
 import { ApiError } from './mock.ts';
 import type { UploadQueue } from '../upload/queue.ts';
 import type { PartBody, PartSource } from '../upload/worker.ts';
@@ -45,9 +45,15 @@ import type {
  * What `fallback` is decides what a collector sees for those thirteen, and by
  * default it is `src/api/local.ts`: the five onboarding methods answered from
  * this phone's own store, and the eleven that describe the platform's records
- * refusing with `no_server` so the screen says the app is not connected rather
- * than showing invented work at invented prices. `MockCollectorApi` takes its
- * place under `EXPO_PUBLIC_MOCK_DATA=1`, for exercising a layout.
+ * refusing rather than showing invented work at invented prices.
+ * `MockCollectorApi` takes its place under `EXPO_PUBLIC_MOCK_DATA=1`, for
+ * exercising a layout.
+ *
+ * Their refusal is re-labelled on the way out of here. `localOnly` says
+ * `no_server`, which is true of a build with no server; this class only exists
+ * when there is one, so `noRoute()` below turns it into `no_route` — connected,
+ * signed in, and this branch has not been merged. Four states, four sentences:
+ * not connected, connected with no route, genuinely empty, failed to load.
  *
  * ## The collector id
  *
@@ -418,8 +424,28 @@ export class HttpCollectorApi implements CollectorApi {
     });
   }
 
-  /* --- No server route yet: the mock answers ---------------------- */
+  /* --- No server route yet: the fallback answers ------------------- */
   /* Delete a line here the day the matching route lands.             */
+
+  /**
+   * A delegated answer the fallback also cannot give, re-labelled for a build
+   * that *has* a server.
+   *
+   * `localOnly` rejects with `no_server`, which is its own truth: on a mock
+   * build there is no server. Reaching this class means there is one — the
+   * collector signed in to it — and the missing piece is the route, not the
+   * connection. Showing "the app is not connected to a server" there sends a
+   * collector to check their Wi-Fi over a branch that has not been merged yet.
+   *
+   * Only the nine platform-owned methods below are wrapped. The five onboarding
+   * ones are answered from this phone and never reject with either code.
+   */
+  private noRoute<T>(answer: Promise<T>): Promise<T> {
+    return answer.catch((error: unknown) => {
+      if (isNoServer(error)) throw new ApiError(NO_ROUTE);
+      throw error;
+    });
+  }
 
   profile(): Promise<CollectorProfile | null> {
     return this.fallback.profile();
@@ -439,28 +465,28 @@ export class HttpCollectorApi implements CollectorApi {
     return this.fallback.submitExam(answers);
   }
   tasks(): Promise<Task[]> {
-    return this.fallback.tasks();
+    return this.noRoute(this.fallback.tasks());
   }
   task(id: string): Promise<Task> {
-    return this.fallback.task(id);
+    return this.noRoute(this.fallback.task(id));
   }
   claimTask(taskId: string): Promise<Claim> {
-    return this.fallback.claimTask(taskId);
+    return this.noRoute(this.fallback.claimTask(taskId));
   }
   myClaims(): Promise<Claim[]> {
-    return this.fallback.myClaims();
+    return this.noRoute(this.fallback.myClaims());
   }
   boundDevices(): Promise<BoundDevice[]> {
-    return this.fallback.boundDevices();
+    return this.noRoute(this.fallback.boundDevices());
   }
   bindDevice(serial: string): Promise<BoundDevice> {
-    return this.fallback.bindDevice(serial);
+    return this.noRoute(this.fallback.bindDevice(serial));
   }
   createSession(input: SessionInput): Promise<CollectionSession> {
-    return this.fallback.createSession(input);
+    return this.noRoute(this.fallback.createSession(input));
   }
   sessions(): Promise<CollectionSession[]> {
-    return this.fallback.sessions();
+    return this.noRoute(this.fallback.sessions());
   }
   /**
    * APP-25's single authorised entry point. It stays on the local queue: the
@@ -473,7 +499,7 @@ export class HttpCollectorApi implements CollectorApi {
     // The mock still owns the gate — one confirmation per episode, and only
     // from `pending_upload`. It throws before anything is queued if the
     // confirmation has already been spent.
-    const episode = await this.fallback.confirmUpload(episodeId);
+    const episode = await this.noRoute(this.fallback.confirmUpload(episodeId));
     // Nothing is enqueued here. A delivery needs the ingest `EpisodeRecord` and
     // the files themselves, and both arrive from the device offload step that
     // does not exist yet (`src/device/transfer.ts` is a mock). When one is on

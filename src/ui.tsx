@@ -9,7 +9,8 @@ import {
   type TextInputProps,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { isNoServer } from './api/local.ts';
+import { isUnanswerable } from './api/local.ts';
+import { errorKey } from './errors.ts';
 import { useNav } from './nav.tsx';
 import { useT } from './locale.tsx';
 import { useTheme } from './theme.tsx';
@@ -151,10 +152,12 @@ export function ListScreen<T>({
  * screen fell through to `data ?? []` and drew an empty list, so "the network
  * is down" and "you have claimed nothing" looked identical — and the empty one
  * is the answer a collector believes. Loading, failed and genuinely empty are
- * three different screens now, and this is where the fourth is told from them:
- * a screen whose content belongs to a server this build has none of
- * (`src/api/local.ts`). That one says so and offers no retry, because there is
- * nothing to try again — the sentence would not change.
+ * three different screens now, and this is where the last two are told from
+ * them: a screen whose content belongs to a server this build has none of, and
+ * one whose server is right there and has no route for it yet
+ * (`src/api/local.ts`). Both say so and offer no retry, because there is
+ * nothing to try again — the sentence would not change. Which of the two
+ * sentences it is, `src/errors.ts` decides from the code.
  *
  * `Note` carries the sentence, so it is announced to a screen reader (its live
  * region) and is not a colour; `Button` carries the retry, so the tap target is
@@ -171,10 +174,10 @@ export function LoadFailed({
   onRetry: () => void;
 }) {
   const tt = useT();
-  if (isNoServer(error)) {
+  if (isUnanswerable(error)) {
     return (
       <Screen title={title}>
-        <Note text={tt('common.noServer')} />
+        <Note text={tt(errorKey(error))} />
       </Screen>
     );
   }

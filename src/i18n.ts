@@ -30,11 +30,14 @@ const vi = {
   'common.needRegister': 'Cần tạo tài khoản trước khi tiếp tục.',
   'common.unknownState': 'Trạng thái chưa xác định.',
   'common.rateLimited': 'Bạn đã thử quá nhiều lần. Đợi một lát rồi thử lại.',
-  // Three different sentences, never mixed up: this one is "chưa có máy chủ",
+  // Four different sentences, never mixed up: this one is "chưa có máy chủ",
+  // `common.noRoute` is "đã kết nối nhưng máy chủ chưa có phần này",
   // `common.loadFailed` is "hỏi rồi nhưng không nhận được trả lời", and each
   // screen's own `*.empty` is "máy chủ trả lời là không có gì".
   'common.noServer':
     'Ứng dụng chưa kết nối với máy chủ. Nội dung của màn hình này do máy chủ cung cấp, nên hiện chưa có gì để hiển thị. Đây không có nghĩa là bạn chưa có dữ liệu.',
+  'common.noRoute':
+    'Ứng dụng đã kết nối với máy chủ, nhưng máy chủ chưa có phần này. Không phải mạng của bạn có vấn đề, và cũng không có nghĩa là bạn chưa có dữ liệu.',
 
   // The sign-in flow. It exists only when this build talks to a server
   // (`src/api/config.ts`); against the mock the app still opens on registration.
@@ -108,6 +111,11 @@ const vi = {
   'home.training': 'Đào tạo & kiểm tra',
   'home.gateExam': 'Chưa đạt bài kiểm tra — chưa thể nhận nhiệm vụ.',
   'home.gateDevice': 'Chưa liên kết thiết bị — chưa thể tạo phiên thu thập hay cấu hình thiết bị.',
+  // Why the Wi-Fi button is grey when nobody knows what is bound. Deliberately
+  // not `home.gateDevice`: that one says the collector has bound nothing, and
+  // an unread list is not the same claim.
+  'home.gateDeviceUnknown':
+    'Chưa đọc được danh sách thiết bị của bạn, nên chưa thể cấu hình Wi-Fi. Đây không có nghĩa là bạn chưa liên kết thiết bị nào.',
 
   'hall.title': 'Sảnh nhiệm vụ',
   'hall.empty': 'Hiện chưa có nhiệm vụ nào.',
@@ -255,6 +263,8 @@ const en: Record<MessageKey, string> = {
   'common.rateLimited': 'Too many attempts. Wait a moment, then try again.',
   'common.noServer':
     'The app is not connected to a server yet. What belongs on this screen comes from the server, so there is nothing to show here. It does not mean you have nothing.',
+  'common.noRoute':
+    'The app is connected to the server, but the server does not carry this part yet. Nothing is wrong with your connection, and it does not mean you have nothing.',
 
   'signin.title': 'Sign in',
   'signin.intro':
@@ -326,6 +336,8 @@ const en: Record<MessageKey, string> = {
   'home.gateExam': 'Exam not passed yet — tasks cannot be claimed.',
   'home.gateDevice':
     'No device bound yet — a collection session cannot be created and no device can be configured.',
+  'home.gateDeviceUnknown':
+    'Your device list could not be read, so Wi-Fi cannot be configured. It does not mean you have no device bound.',
 
   'hall.title': 'Task hall',
   'hall.empty': 'No tasks are open right now.',

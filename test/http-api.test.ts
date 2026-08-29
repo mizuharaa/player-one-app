@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { HttpCollectorApi, requestSignInCode, verifySignInCode } from '../src/api/http.ts';
+import { NO_ROUTE, localOnly } from '../src/api/local.ts';
 import { ApiError, MockCollectorApi } from '../src/api/mock.ts';
+import type { CollectorApi } from '../src/api/types.ts';
 
 /**
  * The HTTP client against the server's real response shapes.
@@ -35,14 +37,23 @@ const json = (status: number, body: unknown): Response =>
     headers: { 'content-type': 'application/json' },
   });
 
+/**
+ * `fallback` defaults to what `src/App.tsx` actually builds: `localOnly` over
+ * the phone's store. It used to be a bare `MockCollectorApi` here, which is the
+ * `EXPO_PUBLIC_MOCK_DATA=1` wiring — so every test in this file was exercising
+ * a build no collector gets, and the seeded rows it merged in were invented.
+ * The two merge tests below opt back into that build on purpose, because seeded
+ * rows are the only way to have a local list to merge at all.
+ */
 const client = (
   handler: (url: string, init: RequestInit) => Response,
   onUnauthorized: () => void = () => {},
+  fallback: CollectorApi = localOnly(new MockCollectorApi()),
 ) => {
   const calls = stubFetch(handler);
   const api = new HttpCollectorApi(
     { baseUrl: BASE, token: () => 'tok-abc', onUnauthorized },
-    new MockCollectorApi(),
+    fallback,
   );
   return { api, calls };
 };
@@ -152,11 +163,25 @@ describe('GET /api/me/episodes', () => {
     expect(JSON.stringify(found)).not.toContain('lens_obstructed');
   });
 
+  it('stands the server’s list up alone when there is no local one', async () => {
+    // The default build has no local episode list — the device offload that
+    // would produce one is still a mock, so `localOnly` refuses — and that
+    // refusal must not take the server's real list down with it. Drop the
+    // catch in `episodes()` and this read fails outright, leaving a collector
+    // told nothing about footage the server is holding.
+    const { api } = client(() => json(200, { episodes: [ROW] }));
+    const ids = (await api.episodes()).map((e) => e.episodeId);
+
+    expect(ids).toEqual(['ego1-20260819-0640']);
+  });
+
   it('keeps an episode the server has never heard of', async () => {
     // The local queue and the server's list are two lists that overlap. An
     // episode still waiting on this phone must not vanish from the screen it
-    // is queued on, or a collector assumes the footage is lost.
-    const { api } = client(() => json(200, { episodes: [ROW] }));
+    // is queued on, or a collector assumes the footage is lost. Seeded
+    // fallback, i.e. the EXPO_PUBLIC_MOCK_DATA=1 build: it is the only one
+    // with a local list.
+    const { api } = client(() => json(200, { episodes: [ROW] }), () => {}, new MockCollectorApi());
     const ids = (await api.episodes()).map((e) => e.episodeId);
 
     expect(ids).toContain('ego1-20260819-0640');
@@ -164,10 +189,13 @@ describe('GET /api/me/episodes', () => {
   });
 
   it('lets the server win where both know the episode', async () => {
-    const { api } = client(() =>
-      json(200, {
-        episodes: [{ ...ROW, episode_id: 'ego1-20260821-0715', state: 'uploaded' }],
-      }),
+    const { api } = client(
+      () =>
+        json(200, {
+          episodes: [{ ...ROW, episode_id: 'ego1-20260821-0715', state: 'uploaded' }],
+        }),
+      () => {},
+      new MockCollectorApi(),
     );
     const rows = (await api.episodes()).filter((e) => e.episodeId === 'ego1-20260821-0715');
 
@@ -188,6 +216,50 @@ describe('GET /api/me/episodes', () => {
 
     expect(found?.state).toBe('under_review');
     expect(found?.stateText?.vi).toBe('Không thể thanh toán');
+  });
+});
+
+describe('a server that has no route for this is not a missing server', () => {
+  it('re-labels every delegated refusal, and never says "not connected"', async () => {
+    // The collector is signed in to a real server. `tasks`, `boundDevices`,
+    // `createSession` and six more have no route on any merged branch, so the
+    // fallback refuses them — but "the app is not connected to a server" is a
+    // false sentence here and sends a collector to check their Wi-Fi.
+    const { api } = client(() => json(200, { episodes: [] }));
+    const calls: [string, () => Promise<unknown>][] = [
+      ['tasks', () => api.tasks()],
+      ['task', () => api.task('task-cook')],
+      ['claimTask', () => api.claimTask('task-cook')],
+      ['myClaims', () => api.myClaims()],
+      ['boundDevices', () => api.boundDevices()],
+      ['bindDevice', () => api.bindDevice('EGO1-PILOT-0007')],
+      [
+        'createSession',
+        () =>
+          api.createSession({
+            taskId: 'task-cook',
+            deviceSerial: 'EGO1-PILOT-0007',
+            scenario: 'home',
+            othersInFrame: false,
+            sensitiveInfo: false,
+          }),
+      ],
+      ['sessions', () => api.sessions()],
+      ['confirmUpload', () => api.confirmUpload('ego1-20260821-0715')],
+    ];
+
+    for (const [name, call] of calls) {
+      const error = await call().catch((e: unknown) => e);
+      expect((error as Error).message, name).toBe(NO_ROUTE);
+    }
+  });
+
+  it('leaves the collector’s own record alone — that one is answered', async () => {
+    // The five onboarding methods are this phone's, not the platform's, and
+    // wrapping them would turn a working screen into a refusal.
+    const { api } = client(() => json(200, { episodes: [] }));
+    expect(await api.profile()).toBeNull();
+    expect((await api.register('Nguyễn Văn A', '0903000001')).name).toBe('Nguyễn Văn A');
   });
 });
 
@@ -226,7 +298,7 @@ describe('a 401 signs the collector out', () => {
           wiped += 1;
         },
       },
-      new MockCollectorApi(),
+      localOnly(new MockCollectorApi()),
     );
 
     await expect(api.income()).rejects.toThrow('network');

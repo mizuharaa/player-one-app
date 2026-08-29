@@ -4,7 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { CollectorApi } from './api/types.ts';
 import { API_BASE_URL, usingMockData, usingServer } from './api/config.ts';
 import { HttpCollectorApi } from './api/http.ts';
-import { isNoServer, localOnly } from './api/local.ts';
+import { isUnanswerable, localOnly } from './api/local.ts';
 import { loadApi } from './api/persist.ts';
 import { clearSession, readSession, writeSession, type Session } from './auth.ts';
 import { resume } from './resume.ts';
@@ -60,11 +60,12 @@ function Current() {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // "This build has no server" is an answer, not a lost packet. Retrying it
-      // three times over seven seconds only delays the sentence that says so,
-      // and leaves the screen on "Đang tải…" while it does. Everything else
-      // keeps react-query's default three attempts.
-      retry: (count, error) => !isNoServer(error) && count < 3,
+      // "This build has no server" and "the server has no route for this" are
+      // both answers, not lost packets. Retrying either three times over seven
+      // seconds only delays the sentence that says so, and leaves the screen on
+      // "Đang tải…" while it does. Everything else keeps react-query's default
+      // three attempts.
+      retry: (count, error) => !isUnanswerable(error) && count < 3,
     },
   },
 });

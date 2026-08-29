@@ -46,6 +46,10 @@ const ERRORS: Record<string, MessageKey> = {
   // a rejected query, where `LoadFailed` says it without offering a retry, and
   // as a rejected mutation, where this sentence is what the collector reads.
   no_server: 'common.noServer',
+  // The fourth state: connected to a server that has no route for this yet.
+  // Same behaviour as `no_server` — no retry, never an empty list — and a
+  // different sentence, because the collector's Wi-Fi is not the problem.
+  no_route: 'common.noRoute',
   unauthorized: 'signin.expired',
   bad_code: 'signin.badCode',
   rate_limited: 'common.rateLimited',

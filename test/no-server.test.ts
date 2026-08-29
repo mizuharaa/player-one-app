@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MockCollectorApi } from '../src/api/mock.ts';
-import { NO_SERVER, isNoServer, localOnly } from '../src/api/local.ts';
+import { NO_ROUTE, NO_SERVER, isNoServer, localOnly } from '../src/api/local.ts';
 import { AGREEMENTS } from '../src/api/types.ts';
 import { GENERIC_ERROR, codeKey } from '../src/errors.ts';
 import { LOCALES, MESSAGES } from '../src/i18n.ts';
@@ -85,9 +85,12 @@ describe('what it refuses to invent', () => {
       expect(text, locale).toBeTruthy();
       expect(text, locale).not.toMatch(/^[a-z][a-z0-9_]*$/);
     }
-    // The three states are three different sentences, not one reused.
+    // The four states are four different sentences, not one reused.
     expect(MESSAGES.vi['common.noServer']).not.toBe(MESSAGES.vi['common.loadFailed']);
     expect(MESSAGES.vi['common.noServer']).not.toBe(MESSAGES.vi['income.empty']);
+    expect(MESSAGES.vi['common.noServer']).not.toBe(MESSAGES.vi['common.noRoute']);
+    // And "connected, no route yet" never claims the connection is the problem.
+    expect(codeKey(NO_ROUTE)).toBe('common.noRoute');
   });
 
   it('leaves the seed alone, for whoever asks for it', async () => {

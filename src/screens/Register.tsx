@@ -34,11 +34,17 @@ export function Register() {
         which methods are delegated and why). Saying that here beats leaving a
         signed-in collector to guess. Their number is shown with it, so they can
         see the app has not lost the sign-in it is about to look like it lost.
+
+        Plain `Body` inside a `Card`, not `Note`, for the reason the privacy
+        card in `SessionCreate.tsx` gives: `Note` is a live region, for what the
+        machine says after an action. This is standing text present on mount,
+        and a screen reader should meet it in reading order rather than be
+        interrupted at it.
       */}
       {session !== null ? (
         <Card>
           <Row label={tt('signin.signedInAs')} value={session.phone} />
-          <Note text={tt('register.signedIn')} />
+          <Body>{tt('register.signedIn')}</Body>
         </Card>
       ) : null}
       <Card>
